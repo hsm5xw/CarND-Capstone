@@ -4,3 +4,7 @@ build
 devel
 
 profile.tmp
+
+# exclude too large files for the Capstone project
+*.bag
+traffic_light_bag_file/*
