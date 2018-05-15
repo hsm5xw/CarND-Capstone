@@ -95,6 +95,7 @@ class DBWNode(object):
             if self.dbw_enabled:
                 self.publish(self.throttle, self.brake, self.steering)
                 #self.publish(1.0, 0.0, 0.0)  # debug mode
+                #self.publish(0.1, 0., self.steering) # debug mode
             rate.sleep()
 
 

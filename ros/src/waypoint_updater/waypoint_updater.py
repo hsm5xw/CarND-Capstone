@@ -26,6 +26,11 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 
 
+# calculate Euclidean distance
+def distance( x1, y1, x2, y2):
+    return math.sqrt( (x2-x1)**2 + (y2-y1)**2 );
+
+
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
@@ -52,7 +57,7 @@ class WaypointUpdater(object):
         rate = rospy.Rate(50)  # 50 Hz
 
         while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints: 
+            if self.pose and self.base_waypoints and self.waypoint_tree: 
                 # Get closest waypoint  
                 closest_waypoint_idx = self.get_closest_waypoint_idx()
                 self.publish_waypoints( closest_waypoint_idx)

@@ -17,15 +17,24 @@ class Controller(object):
                        accel_limit, wheel_radius, wheel_base, steer_ratio, 
                        max_lat_accel, max_steer_angle):
 
+        # global debug counter
+        self.debug_counter = 0
+
+
         # TODO: Implement
         self.yaw_controller = YawController( wheel_base, steer_ratio, MIN_SPEED, max_lat_accel, max_steer_angle)
+        
+        #kp = 0.3
+        #ki = 0.1
+        #kd = 0.
+        
+        kp = 1.3
+        ki = 0.0
+        kd = 0.5
 
-        kp = 0.3
-        ki = 0.1
-        kd = 0.
         mn = 0.      # minimum throttle value
         mx = 0.2     # maximum throttle value
-        self.throttle_controller = PID( kp, ki, mn, mx)
+        self.throttle_controller = PID( kp, ki, kd, mn, mx)
 
         tau = 0.5    # 1/(2pi*tau) = cutoff frequency
         ts  = 0.02   # sample time
@@ -54,15 +63,20 @@ class Controller(object):
 
         current_vel = self.vel_lpf.filt( current_vel)
 
-        # rospy.logwarn( "Angular vel: {0}".format(angular_vel) )
-        # rospy.logwarn( "Target  velocity: {0}.format(linear_vel) )
-        # rospy.logwarn( "Target  angular velocity: {0}\n".format(angular_vel) )
-        # rospy.logwarn( "Current velocity: {0}".format(current_vel) )
-        # rospy.logwarn( "Filtered velocity: {0}".format(self.vel_lpf.get()) )
+        rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
+        #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
+        #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
+        #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
+        #rospy.logwarn( "Angular vel: \t {0}".format(angular_vel) )
+        #rospy.logwarn( "\n")
+        #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
+        #rospy.logwarn( "\n")
+        self.debug_counter = self.debug_counter + 1
 
         # steering control
         steering  = self.yaw_controller.get_steering( linear_vel, angular_vel, current_vel)
-    
+        steering  = steering - 0.04   # temporary ... (will delete)
+
         vel_error     = linear_vel - current_vel        
         self.last_vel = current_vel
 
