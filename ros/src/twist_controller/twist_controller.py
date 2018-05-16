@@ -2,7 +2,7 @@ import rospy
 from std_msgs.msg import Bool
 from dbw_mkz_msgs.msg  import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport  # Drive-by-wire messages
 from geometry_msgs.msg import TwistStamped
-
+import math
 from yaw_controller import YawController  # yaw_controller.py
 from pid import PID                       # pid.py
 from lowpass import LowPassFilter         # lowpass.py
@@ -28,8 +28,8 @@ class Controller(object):
         #ki = 0.1
         #kd = 0.
         
-        kp = 1.3
-        ki = 0.0
+        kp = 5.0
+        ki = 1.0
         kd = 0.5
 
         mn = 0.      # minimum throttle value
@@ -63,7 +63,7 @@ class Controller(object):
 
         current_vel = self.vel_lpf.filt( current_vel)
 
-        rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
+        #rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
         #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
         #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
         #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
@@ -71,11 +71,11 @@ class Controller(object):
         #rospy.logwarn( "\n")
         #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
         #rospy.logwarn( "\n")
-        self.debug_counter = self.debug_counter + 1
+        #self.debug_counter = self.debug_counter + 1
 
         # steering control
         steering  = self.yaw_controller.get_steering( linear_vel, angular_vel, current_vel)
-        steering  = steering - 0.04   # temporary ... (will delete)
+        steering  = steering * 30.   # temporary ... (will delete)
 
         vel_error     = linear_vel - current_vel        
         self.last_vel = current_vel
@@ -94,10 +94,10 @@ class Controller(object):
             brake    = 400   # N*m - to hold the car in place if we are stopped at a light. Acceleration - 1m/s^2
         
         # If throttle is really small and velocity error < 0 (i.e. we're going faster than we want to be)
-        elif throttle < 0.1 and vel_error < 0.:
+        elif vel_error < 0.:
             throttle = 0.
             decel    = max( vel_error, self.decel_limit)  # a negative number
-            brake    = abs(decel) * self.vehicle_mass * self.wheel_radius   # Torque N*m
+            brake    = math.fabs(decel) * self.vehicle_mass * self.wheel_radius   # Torque N*m
  
         return throttle, brake, steering
 

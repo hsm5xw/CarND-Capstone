@@ -19,9 +19,18 @@ class PID(object):
     def step(self, error, sample_time):
 
         integral   = self.int_val + error * sample_time;
-        derivative = (error - self.last_error) / sample_time;
+        if(sample_time == 0.):
+            derivative = 0
+        else:
+            derivative = (error - self.last_error) / sample_time;
 
-        val = self.kp * error + self.ki * integral + self.kd * derivative;
+        val = self.kp * error + self.ki * self.int_val + self.kd * derivative
+
+        # Bound the result.
+        val = max(self.min, min(val, self.max))
+
+        #rospy.logwarn("error: {a:f}, integral: {b:f}, derivative: {c:f}, pid: {d:f}".format(a=error,b=self.int_val,c=derivative, d=val))
+        #rospy.logwarn("error: {a:f}".format(a=error))
 
         if val > self.max:
             val = self.max

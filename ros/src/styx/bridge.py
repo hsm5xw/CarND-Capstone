@@ -55,7 +55,7 @@ class Bridge(object):
         self.subscribers = [rospy.Subscriber(e.topic, TYPE[e.type], self.callbacks[e.topic])
                             for e in conf.subscribers]
 
-        self.publishers = {e.name: rospy.Publisher(e.topic, TYPE[e.type], queue_size=1)
+        self.publishers = {e.name: rospy.Publisher(e.topic, TYPE[e.type], queue_size=50)
                            for e in conf.publishers}
 
     def create_light(self, x, y, z, yaw, state):
@@ -130,10 +130,11 @@ class Bridge(object):
     def publish_odometry(self, data):
         pose = self.create_pose(data['x'], data['y'], data['z'], data['yaw'])
 
+
         position = (data['x'], data['y'], data['z'])
         orientation = tf.transformations.quaternion_from_euler(0, 0, math.pi * data['yaw']/180.)
         self.broadcast_transform("base_link", position, orientation)
-
+        print("Odo publish: {a:f}, {b:f}, {c:f}".format(a=pose.pose.position.x, b=pose.pose.position.y, c=pose.pose.position.z))
         self.publishers['current_pose'].publish(pose)
         self.vel = data['velocity']* 0.44704
         self.angular = self.calc_angular(data['yaw'] * math.pi/180.)
@@ -204,3 +205,7 @@ class Bridge(object):
             z_values.append(z)
 
         self.server('drawline', data={'next_x': x_values, 'next_y': y_values, 'next_z': z_values})
+
+
+
+

@@ -42,7 +42,7 @@ class WaypointUpdater(object):
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
         # outgoing topic
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=400)
 
         # TODO: Add other member variables you need below
         self.pose           = None
@@ -66,6 +66,7 @@ class WaypointUpdater(object):
     def get_closest_waypoint_idx(self):
         x = self.pose.pose.position.x
         y = self.pose.pose.position.y
+        rospy.logwarn("Got Pose: {a:f}:{b:f}".format(a=x, b=y))
         closest_idx = self.waypoint_tree.query([x,y], 1)[1]  # kd tree (1st closest, idx)
         
         # Check if closest waypoint is ahead or behind vehicle
@@ -90,12 +91,14 @@ class WaypointUpdater(object):
         end_pt = min( closest_idx + LOOKAHEAD_WPS, len(self.base_waypoints.waypoints) )
         lane.header    = self.base_waypoints.header
         lane.waypoints = self.base_waypoints.waypoints[ closest_idx: end_pt]
+        rospy.logwarn("publishing waypoints: {a:d}:{b:d}".format(a=closest_idx, b=end_pt))
         self.final_waypoints_pub.publish( lane)
 
 
     # Incoming topic #1 callback 
     def pose_cb(self, msg):
         self.pose = msg     # Store the car's pose
+        rospy.logwarn("Got Pose in Callback: {a:f}:{b:f}".format(a=self.pose.pose.position.x, b=self.pose.pose.position.y))
 
     # Incoming topic #2 callback 
     ''' NOTE: This is a latched subscriber. 

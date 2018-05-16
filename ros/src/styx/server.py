@@ -34,7 +34,10 @@ def telemetry(sid, data):
     if data["dbw_enable"] != dbw_enable:
         dbw_enable = data["dbw_enable"]
         bridge.publish_dbw_status(dbw_enable)
+
+    #print("Odo From Server: {a:f}, {b:f}, {c:f}".format(a=data['x'], b=data['y'], c=data['z']))
     bridge.publish_odometry(data)
+
     for i in range(len(msgs)):
         topic, data = msgs.pop(0)
         sio.emit(topic, data=data, skip_sid=True)
