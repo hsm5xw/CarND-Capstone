@@ -30,6 +30,7 @@
 
 #include "ros/ros.h"
 #include "pure_pursuit_core.h"
+#include <iostream>
 
 namespace waypoint_follower
 {
@@ -38,6 +39,7 @@ void PurePursuit::callbackFromCurrentPose(const geometry_msgs::PoseStampedConstP
 {
   current_pose_.header = msg->header;
   current_pose_.pose = msg->pose;
+  std::cout << "Got New Pose!" << std::endl;
   pose_set_ = true;
 }//processing frequency
 
@@ -257,17 +259,21 @@ geometry_msgs::Twist PurePursuit::calcTwist(double curvature, double cmd_velocit
 
   geometry_msgs::Twist twist;
   twist.linear.x = cmd_velocity;
-  if (!following_flag)
+  if (following_flag)
   {
     //ROS_ERROR_STREAM("Not following");
+    std::cout << "Vehicle Following" << std::endl;
     twist.angular.z = current_velocity_.twist.linear.x * curvature;
   }
   else
   {
+    std::cout << "Vehicle Not Following" << std::endl;
     twist.angular.z = prev_angular_velocity;
   }
 
   prev_angular_velocity = twist.angular.z;
+
+  std::cout << "Twist: Z: " << twist.angular.z << std::endl;
   return twist;
 }
 
@@ -313,6 +319,7 @@ geometry_msgs::TwistStamped PurePursuit::outputZero() const
   twist.twist.linear.x = 0;
   twist.twist.angular.z = 0;
   twist.header.stamp = ros::Time::now();
+  std::cout << "Outputting Zero" << std::endl;
   return twist;
 }
 geometry_msgs::TwistStamped PurePursuit::outputTwist(geometry_msgs::Twist t) const
@@ -341,6 +348,7 @@ geometry_msgs::TwistStamped PurePursuit::outputTwist(geometry_msgs::Twist t) con
   twist.twist.linear.x = fabs(a) > g_lateral_accel_limit ? max_v
                     : v;
   twist.twist.angular.z = omega;
+  std::cout << "z as calculated: " << twist.twist.angular.z << std::endl;
 
   return twist;
 }
@@ -377,6 +385,7 @@ geometry_msgs::TwistStamped PurePursuit::go()
       num_of_next_waypoint_ == (static_cast<int>(current_waypoints_.getSize() - 1)))
   {
     position_of_next_target_ = current_waypoints_.getWaypointPosition(num_of_next_waypoint_);
+    std::cout << "Publishing twist from line 385 with arg:" << position_of_next_target_ << " " << getCmdVelocity(0) << std::endl;
     return outputTwist(calcTwist(calcCurvature(position_of_next_target_), getCmdVelocity(0)));
   }
 
@@ -390,7 +399,7 @@ geometry_msgs::TwistStamped PurePursuit::go()
   }
 
   // ROS_INFO("next_target : ( %lf , %lf , %lf)", next_target.x, next_target.y,next_target.z);
-
+  std::cout << "Publishing twist from line 399 with arg:" << position_of_next_target_ << " " << getCmdVelocity(0) << std::endl;
   return outputTwist(calcTwist(calcCurvature(position_of_next_target_), getCmdVelocity(0)));
 
 // ROS_INFO("linear : %lf, angular : %lf",twist.twist.linear.x,twist.twist.angular.z);

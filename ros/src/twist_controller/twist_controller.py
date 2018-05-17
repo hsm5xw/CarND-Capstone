@@ -12,6 +12,12 @@ ONE_MPH = 0.44704
 
 MIN_SPEED = 0.1
 
+def clamp(val, min_val, max_val):
+    val = max( val, min_val)
+    val = min( val, max_val)
+
+    return val
+
 class Controller(object):
     def __init__(self, vehicle_mass, fuel_capacity, brake_deadband, decel_limit,
                        accel_limit, wheel_radius, wheel_base, steer_ratio, 
@@ -63,16 +69,6 @@ class Controller(object):
 
         current_vel = self.vel_lpf.filt( current_vel)
 
-        rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
-        #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
-        #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
-        #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
-        #rospy.logwarn( "Angular vel: \t {0}".format(angular_vel) )
-        #rospy.logwarn( "\n")
-        #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
-        #rospy.logwarn( "\n")
-        self.debug_counter = self.debug_counter + 1
-
         # steering control
         steering  = self.yaw_controller.get_steering( linear_vel, angular_vel, current_vel)
         steering  = steering - 0.04   # temporary ... (will delete)
@@ -98,6 +94,21 @@ class Controller(object):
             throttle = 0.
             decel    = max( vel_error, self.decel_limit)  # a negative number
             brake    = abs(decel) * self.vehicle_mass * self.wheel_radius   # Torque N*m
+
+        throttle = clamp(throttle, 0, 0.05)
+
+        rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
+        #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
+        #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
+        #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
+        #rospy.logwarn( "Angular vel: \t {0}".format(angular_vel) )
+        #rospy.logwarn( "\n")
+        #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
+
+        rospy.logwarn( "steering: {0}".format(steering) )
+        rospy.logwarn( "throttle: \t {0}".format(throttle) )
+        rospy.logwarn( "\n")
+        self.debug_counter = self.debug_counter + 1
  
         return throttle, brake, steering
 

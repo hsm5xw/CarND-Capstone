@@ -47,9 +47,9 @@ class DBWNode(object):
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
 
         # outgoing topics
-        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
-        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=1)
-        self.brake_pub    = rospy.Publisher('/vehicle/brake_cmd',    BrakeCmd,    queue_size=1)
+        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=50)
+        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=50)
+        self.brake_pub    = rospy.Publisher('/vehicle/brake_cmd',    BrakeCmd,    queue_size=50)
 
 
         # TODO: Create `Controller` object
@@ -107,6 +107,7 @@ class DBWNode(object):
     def twist_cb( self, msg):
         self.linear_vel   = msg.twist.linear.x      # target linear velocity
         self.angular_vel  = msg.twist.angular.z     # target angular velocity
+        #rospy.logwarn("angular_vel: {a:f}".format(a=self.angular_vel))
 
     def velocity_cb( self, msg):
         self.current_vel  = msg.twist.linear.x 

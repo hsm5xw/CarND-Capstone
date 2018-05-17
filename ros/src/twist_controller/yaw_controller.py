@@ -1,6 +1,7 @@
 # For steering commands ...
 #      A controller that can be used to convert target linear and angular velocities to steering commands
 
+import math
 from math import atan
 
 class YawController(object):
@@ -15,7 +16,10 @@ class YawController(object):
 
 
     def get_angle(self, radius):
-        angle = atan(self.wheel_base / radius) * self.steer_ratio
+        if math.fabs(radius) < 0.00001:
+            return 0.0
+        else:
+            angle = atan(self.wheel_base / radius) * self.steer_ratio
         return max(self.min_angle, min(self.max_angle, angle))
 
     def get_steering(self, linear_velocity, angular_velocity, current_velocity):
