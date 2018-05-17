@@ -133,7 +133,7 @@ class Bridge(object):
         position = (data['x'], data['y'], data['z'])
         orientation = tf.transformations.quaternion_from_euler(0, 0, math.pi * data['yaw']/180.)
         self.broadcast_transform("base_link", position, orientation)
-        print("Odo publish: {a:f}, {b:f}, {c:f}".format(a=pose.pose.position.x, b=pose.pose.position.y, c=pose.pose.position.z))
+        #print("Odo publish: {a:f}, {b:f}, {c:f}".format(a=pose.pose.position.x, b=pose.pose.position.y, c=pose.pose.position.z))
 
         self.publishers['current_pose'].publish(pose)
         self.vel = data['velocity']* 0.44704
