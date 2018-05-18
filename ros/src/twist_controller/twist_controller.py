@@ -67,6 +67,8 @@ class Controller(object):
             self.throttle_controller.reset()
             return 0., 0., 0.        
 
+        current_vel = self.vel_lpf.filt( current_vel)
+
         # steering control
         steering  = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel)
         #steering  = steering - 0.04   # temporary ... (will delete)
@@ -80,12 +82,9 @@ class Controller(object):
         self.last_time  = current_time
 
         # throttle control
-        acceleration = self.throttle_controller.step( vel_error, sample_time)
-        throttle = self.vel_lpf.filt(acceleration)
+        throttle = self.throttle_controller.step( vel_error, sample_time)
         brake    = 0.
 
-        ## we don't need to do the brake values for now, since the car is not going to Stop at Stop lights
-        ## re visit later 
         # If target linear velocity = 0, then go very slow        
         if linear_vel == 0. and current_vel < 0.1:
             throttle = 0.
@@ -97,11 +96,9 @@ class Controller(object):
             decel    = max( vel_error, self.decel_limit)  # a negative number
             brake    = abs(decel) * self.vehicle_mass * self.wheel_radius   # Torque N*m
 
-        # no need, this is done by the lowpass filter
         #throttle = clamp(throttle, 0, 0.05)
 
-        # For some strange reason, after removing all logwarn, the car runs great on my computer        
-        #rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
+        rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
         #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
         #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
         #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
@@ -109,9 +106,9 @@ class Controller(object):
         #rospy.logwarn( "\n")
         #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
 
-        #rospy.logwarn( "steering: {0}".format(steering) )
-        #rospy.logwarn( "throttle: \t {0}".format(throttle) )
-        #rospy.logwarn( "\n")
+        rospy.logwarn( "steering: {0}".format(steering) )
+        rospy.logwarn( "throttle: \t {0}".format(throttle) )
+        rospy.logwarn( "\n")
         self.debug_counter = self.debug_counter + 1
  
         return throttle, brake, steering
