@@ -3,7 +3,9 @@
 import rospy
 from std_msgs.msg import Bool
 from dbw_mkz_msgs.msg  import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport  # Drive-by-wire messages
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import TwistStamped, PoseStamped
+from styx_msgs.msg import Lane, Waypoint
+from tf.transformations import euler_from_quaternion
 import math
 
 from twist_controller import Controller  # twist_controller.py
@@ -68,13 +70,16 @@ class DBWNode(object):
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped,   self.twist_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
-        
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)        #(*)
+        rospy.Subscriber('/final_waypoints', Lane, self.final_waypoints_cb) #(*)
 
         self.current_vel   = None
         self.curr_ang_vel  = None
         self.dbw_enabled   = None
         self.linear_vel    = None
         self.angular_vel   = None
+        self.pose          = None
+        self.final_waypoints_2d = None
 
         self.throttle  = self.steering = self.brake = 0. 
 
@@ -88,6 +93,8 @@ class DBWNode(object):
             # You should only publish the control commands if dbw is enabled
 
             if not None in (self.current_vel, self.linear_vel, self.angular_vel):
+                current_yaw = self.get_current_yaw( self.final_waypoints_2d, self.pose)
+
                 self.throttle, self.brake, self.steering = self.controller.control( self.current_vel,
                                                                                     self.dbw_enabled,
                                                                                     self.linear_vel,
@@ -111,7 +118,25 @@ class DBWNode(object):
 
     def velocity_cb( self, msg):
         self.current_vel  = msg.twist.linear.x 
+
+    def pose_cb( self, msg):
+        self.pose = msg     # Store the car's pose 
+
+    def final_waypoints_cb( self, msg):
+        final_waypoints         = msg.waypoints
+        self.final_waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in final_waypoints]
+
     # ------------------------------------------------------
+
+    def get_current_yaw( self, final_waypoints_2d, current_pose):
+        if not None in (final_waypoints_2d, current_pose):
+            if self.dbw_enabled: 
+                # convert quaternion to yaw
+                orientation = current_pose.pose.orientation
+                _, _, current_yaw = euler_from_quaternion( [orientation.x, orientation.y, orientation.z, orientation.w])
+                #rospy.logwarn("current_yaw: {}".format(current_yaw) )
+
+                return current_yaw
 
     def publish(self, throttle, brake, steer):
         tcmd = ThrottleCmd()

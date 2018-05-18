@@ -20,4 +20,10 @@
 
     <!--Traffic Light Locations and Camera Config -->
     <param name="traffic_light_config" textfile="$(find tl_detector)/sim_traffic_light_config.yaml" />
+
+    <!--pid parameters for easier tuning, without recompiling -->
+    <param name="Kp" value="1.3" />
+    <param name="Ki" value="0.0" />
+    <param name="Kd" value="0.5" />
+
 </launch>

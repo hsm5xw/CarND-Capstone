@@ -26,37 +26,35 @@ class Controller(object):
         # global debug counter
         self.debug_counter = 0
 
-
-        # TODO: Implement
-        self.yaw_controller = YawController( wheel_base, steer_ratio, MIN_SPEED, max_lat_accel, max_steer_angle)
-        
-        #kp = 0.3
-        #ki = 0.1
-        #kd = 0.
-        
-        kp = 1.3
-        ki = 0.0
-        kd = 0.5
-
-        mn = 0.      # minimum throttle value
-        mx = 0.2     # maximum throttle value
-        self.throttle_controller = PID( kp, ki, kd, mn, mx)
-
-        tau = 0.5    # 1/(2pi*tau) = cutoff frequency
-        ts  = 0.02   # sample time
-        self.vel_lpf = LowPassFilter(tau, ts)
-
+        # parameters
         self.vehicle_mass   = vehicle_mass
         self.fuel_capacity  = fuel_capacity
         self.brake_deadband = brake_deadband
         self.decel_limit    = decel_limit
         self.accel_limit    = accel_limit
         self.wheel_radius   = wheel_radius
+        self.last_time      = rospy.get_time()
 
-        self.last_time = rospy.get_time()
+        # TODO: Implement
+        # (init) yaw controller
+        self.yaw_controller = YawController( wheel_base, steer_ratio, MIN_SPEED, max_lat_accel, max_steer_angle)
+           
+        # (init) throttle controller
+        kp = rospy.get_param('Kp', 1.3)  # set parameters from 'launch/styx.launch', without recompiling every time 
+        ki = rospy.get_param('Ki', 0.0)
+        kd = rospy.get_param('Kd', 0.5)
+
+        throttle_min = 0.      # minimum throttle value
+        throttle_max = 0.2     # maximum throttle value
+        self.throttle_controller = PID( kp, ki, kd, throttle_min, throttle_max)
+
+        # (init) low pass filter
+        tau = 0.5              # 1/(2pi*tau) = cutoff frequency
+        ts  = 0.02             # sample time
+        self.vel_lpf = LowPassFilter(tau, ts)
 
     """
-    :@ linear_vel : target linear velocity
+    :@ linear_vel : target linear  velocity
     :@ angular_vel: target angular velocity
     """
     def control(self, current_vel, dbw_enabled, linear_vel, angular_vel):
@@ -67,11 +65,10 @@ class Controller(object):
             self.throttle_controller.reset()
             return 0., 0., 0.        
 
-        current_vel = self.vel_lpf.filt( current_vel)
-
         # steering control
-        steering  = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel)
-        #steering  = steering - 0.04   # temporary ... (will delete)
+        current_vel = self.vel_lpf.filt( current_vel)  # remove noise
+        steering    = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel)
+      
 
         # Begin to calculate Throttle Value
         vel_error     = linear_vel - current_vel        
@@ -102,7 +99,7 @@ class Controller(object):
         #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
         #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
         #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
-        #rospy.logwarn( "Angular vel: \t {0}".format(angular_vel) )
+        
         #rospy.logwarn( "\n")
         #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
 
