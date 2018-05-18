@@ -5,7 +5,7 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 from scipy.spatial import KDTree
-
+from std_msgs.msg import Int32
 import math
 
 '''
@@ -24,11 +24,11 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
-
+MAX_DECEL = 0.5 # From the walkthrough.
 
 # calculate Euclidean distance
 def distance( x1, y1, x2, y2):
-    return math.sqrt( (x2-x1)**2 + (y2-y1)**2 );
+    return math.sqrt( (x2-x1)**2 + (y2-y1)**2 )
 
 
 class WaypointUpdater(object):
@@ -38,7 +38,7 @@ class WaypointUpdater(object):
         # incoming topics
         rospy.Subscriber('/current_pose',   PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
         # outgoing topic
@@ -49,6 +49,7 @@ class WaypointUpdater(object):
         self.base_waypoints = None
         self.waypoints_2d   = None
         self.waypoint_tree  = None
+        self.stopline_wp_idx = None
 
         self.loop()
     
@@ -86,6 +87,15 @@ class WaypointUpdater(object):
         return closest_idx
 
     def publish_waypoints(self, closest_idx):
+
+        # With traffic light updates
+        final_lane = self.generate_lane()
+        self.final_waypoints_pub.publish( final_lane )
+
+
+
+        '''
+        # --------Without traffic light updates ----------
         lane = Lane()
 
         end_pt = min( closest_idx + LOOKAHEAD_WPS, len(self.base_waypoints.waypoints) )
@@ -93,12 +103,79 @@ class WaypointUpdater(object):
         lane.waypoints = self.base_waypoints.waypoints[ closest_idx: end_pt]
         #rospy.logwarn("publishing waypoints: {a:d}:{b:d}".format(a=closest_idx, b=end_pt))
         self.final_waypoints_pub.publish( lane)
+        
+        # --------Without traffic light updates ----------
+        '''
+
+
+    # Generate lane incorporating information from traffic lights
+    def generate_lane(self):
+        lane = Lane()
+        closest_idx = self.get_closest_waypoint_idx()
+        farthest_idx = closest_idx + LOOKAHEAD_WPS
+        base_waypoints = self.base_waypoints.waypoints[closest_idx : farthest_idx]
+
+        # No Red traffic light, or it is further than the end of the planned trajectory
+        # Also: at init when no stopline has yet been returned -- just pass the computed trajectory without traffic info.
+        if ((self.stopline_wp_idx == -1) or (self.stopline_wp_idx >= farthest_idx) or (not self.stopline_wp_idx)):
+            lane.waypoints = base_waypoints
+        else:
+            # Traffic Light is Red. Tune planned ego velocity so that the vehicle stop at the stop line.
+            rospy.logwarn("Waypoint updater: BRAKE.")
+            lane.waypoints = self.decelerate_waypoints( base_waypoints, closest_idx)
+
+        return lane
+
+
+    # Attach required ego velocity information with each waypoint so that the vehicle stop before the stop line
+    # at a traffic light.
+    def decelerate_waypoints(self, waypoints, closest_idx):
+        temp = []
+
+        # For each waypoint in the planned trajectory
+        for i, wp in enumerate(waypoints):
+
+            # A new waypoint
+            p = Waypoint()
+
+            # copy the pose. Only ego velocity is modulated.
+            p.pose = wp.pose
+
+            # The slack in terms of the number of waypoints we have before we have to come to a full stop.
+            # We do not want negative slack (i.e., ego overan the stop line, and is required to reverse). Therefore, the
+            # quickest stop would be immediate halt (= 0 slack)
+            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
+
+            # Compute the physical distance between the current waypoint (index i) and the waypoint where the ego must
+            # come to a complete halt.
+            dist = self.distance(waypoints, i, stop_idx)
+
+            # Compute the required velocity for this waypoint subject to deceleration limit so that the ego can come
+            # to a full stop at the stop line
+            # Equation of motion: v^2 = u^2 + 2*a*S, with v = 0, u = waypoint velocity we would like to set.
+            vel = math.sqrt(2 * MAX_DECEL * dist)
+            if(vel < 1.):
+                # Too low. Just stop
+                vel = 0.
+
+            # In case the vehicle is going slower than compute velocity, do not accelerate.
+            p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
+
+            # Add to the waypoints
+            temp.append(p)
+
+        # Return the waypoint annotated with velocity information
+        return temp
+
+
+
+
 
 
     # Incoming topic #1 callback 
     def pose_cb(self, msg):
         self.pose = msg     # Store the car's pose
-        #rospy.logwarn("Got Pose in Callback: {a:f}:{b:f}".format(a=self.pose.pose.position.x, b=self.pose.pose.position.y))
+
 
     # Incoming topic #2 callback 
     ''' NOTE: This is a latched subscriber. 
@@ -113,8 +190,8 @@ class WaypointUpdater(object):
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):
-        # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        # The traffic light detector sends in the index of the waypoint closest the traffic light we should bother about.
+        self.stopline_wp_idx = msg.data
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
