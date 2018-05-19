@@ -27,19 +27,27 @@ class Controller(object):
         self.debug_counter = 0
 
 
+
+        
+        kp = 0.5
+        ki = 0.1
+        kd = 0.1
+
+        pSteering = 0.004
+        iSteering = 0.00055
+        dSteering = 0.0001
+
         # TODO: Implement
-        self.yaw_controller = YawController( wheel_base, steer_ratio, MIN_SPEED, max_lat_accel, max_steer_angle)
+        self.yaw_controller = YawController(wheel_base, steer_ratio, MIN_SPEED, max_lat_accel, max_steer_angle, pSteering, iSteering, dSteering)
         
-        #kp = 0.3
-        #ki = 0.1
-        #kd = 0.
-        
+        '''
         kp = 1.3
         ki = 0.0
         kd = 0.5
+        '''
 
         mn = 0.      # minimum throttle value
-        mx = 0.2     # maximum throttle value
+        mx = 0.3     # maximum throttle value
         self.throttle_controller = PID( kp, ki, kd, mn, mx)
 
         tau = 0.5    # 1/(2pi*tau) = cutoff frequency
@@ -52,25 +60,27 @@ class Controller(object):
         self.decel_limit    = decel_limit
         self.accel_limit    = accel_limit
         self.wheel_radius   = wheel_radius
-
+        self.last_sample_time = 0.02
         self.last_time = rospy.get_time()
 
     """
     :@ linear_vel : target linear velocity
     :@ angular_vel: target angular velocity
     """
-    def control(self, current_vel, dbw_enabled, linear_vel, angular_vel):
+    def control(self, current_vel, dbw_enabled, linear_vel, angular_vel, lastSteeringWheelAngle, cte):
         # TODO: Change the arg, kwarg list to suit your needs
         # Return throttle, brake, steer
 
         if not dbw_enabled:
             self.throttle_controller.reset()
-            return 0., 0., 0.        
+            return 0., 0., 0., 0.
 
         current_vel = self.vel_lpf.filt( current_vel)
 
         # steering control
-        steering  = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel)
+        #rospy.logwarn("angular_vel(73): {a:f}".format(a=angular_vel))
+        #steering  = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel, lastSteeringWheelAngle)
+        steering = self.yaw_controller.get_steeringFromCTE(linear_vel, angular_vel, current_vel, lastSteeringWheelAngle, cte)
         #steering  = steering - 0.04   # temporary ... (will delete)
 
         # Begin to calculate Throttle Value
@@ -79,6 +89,13 @@ class Controller(object):
 
         current_time    = rospy.get_time()
         sample_time     = current_time - self.last_time
+
+        if(sample_time == 0):
+            sample_time = 0.02
+
+        #if(sample_time < 0.01):
+        #    sample_time = self.last_sample_time
+        #self.last_sample_time = sample_time
         self.last_time  = current_time
 
         # throttle control
@@ -111,5 +128,5 @@ class Controller(object):
         #rospy.logwarn( "\n")
         self.debug_counter = self.debug_counter + 1
  
-        return throttle, brake, steering
+        return throttle, brake, steering, vel_error
 

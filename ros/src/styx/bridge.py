@@ -55,7 +55,7 @@ class Bridge(object):
         self.subscribers = [rospy.Subscriber(e.topic, TYPE[e.type], self.callbacks[e.topic])
                             for e in conf.subscribers]
 
-        self.publishers = {e.name: rospy.Publisher(e.topic, TYPE[e.type], queue_size=50)
+        self.publishers = {e.name: rospy.Publisher(e.topic, TYPE[e.type], queue_size=2)
                            for e in conf.publishers}
 
     def create_light(self, x, y, z, yaw, state):

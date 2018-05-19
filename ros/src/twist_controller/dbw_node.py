@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float64
 from dbw_mkz_msgs.msg  import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport  # Drive-by-wire messages
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import TwistStamped, PoseStamped
 import math
-
+from std_msgs.msg import Float32
 from twist_controller import Controller  # twist_controller.py
 
 '''
@@ -47,10 +47,11 @@ class DBWNode(object):
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
 
         # outgoing topics
-        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=50)
-        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=50)
-        self.brake_pub    = rospy.Publisher('/vehicle/brake_cmd',    BrakeCmd,    queue_size=50)
-
+        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=2)
+        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=2)
+        self.brake_pub    = rospy.Publisher('/vehicle/brake_cmd',    BrakeCmd,    queue_size=2)
+        self.velocity_error_pub = rospy.Publisher('/vehicle/velocity_error', Float32, queue_size=2)
+        self.angular_vel_pub = rospy.Publisher('/vehicle/angular_velocity', Float32, queue_size=2)
 
         # TODO: Create `Controller` object
         self.controller = Controller( vehicle_mass    = vehicle_mass,
@@ -62,21 +63,28 @@ class DBWNode(object):
                                       wheel_base      = wheel_base,
                                       steer_ratio     = steer_ratio,
                                       max_lat_accel   = max_lat_accel,
-                                      max_steer_angle = max_steer_angle)
+                                      max_steer_angle = max_steer_angle,
+                                      )
 
         # TODO: Subscribe to all the topics you need to (incoming topics)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped,   self.twist_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
-        
+        rospy.Subscriber('/vehicle/steering_report', SteeringReport, self.steering_report_cb)
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/cteFromWayPointUpdater', Float64, self.cte)
+        rospy.Subscriber('/cte', Float64, self.cteFromWayPointFollower)
 
         self.current_vel   = None
         self.curr_ang_vel  = None
         self.dbw_enabled   = None
         self.linear_vel    = None
         self.angular_vel   = None
-
-        self.throttle  = self.steering = self.brake = 0. 
+        self.error         = None
+        self.pose          = None
+        self.cte           = None
+        self.lastSteeringWheelAngle = None
+        self.throttle  = self.steering = self.brake = 0.
 
         self.loop()
 
@@ -87,13 +95,16 @@ class DBWNode(object):
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
 
-            if not None in (self.current_vel, self.linear_vel, self.angular_vel):
-                self.throttle, self.brake, self.steering = self.controller.control( self.current_vel,
+            if not None in (self.current_vel, self.linear_vel, self.angular_vel, self.lastSteeringWheelAngle, self.cte):
+                #rospy.logwarn("angular_vel(91): {a:f}".format(a=self.angular_vel))
+                self.throttle, self.brake, self.steering, self.error = self.controller.control( self.current_vel,
                                                                                     self.dbw_enabled,
                                                                                     self.linear_vel,
-                                                                                    self.angular_vel)          
+                                                                                    self.angular_vel,
+                                                                                    self.lastSteeringWheelAngle,
+                                                                                    self.cte)
             if self.dbw_enabled:
-                self.publish(self.throttle, self.brake, self.steering)
+                self.publish(self.throttle, self.brake, self.steering, self.error, self.angular_vel)
                 #self.publish(1.0, 0.0, 0.0)  # debug mode
                 #self.publish(0.1, 0., self.steering) # debug mode
             rate.sleep()
@@ -101,6 +112,17 @@ class DBWNode(object):
 
     # callback routines to grab and store data from incoming topics
     # -----------------------------------------------------
+    def cteFromWayPointFollower(self, msg):
+        rospy.logwarn("CTE From Waypoint Follower: {a:f}".format(a=msg.data))
+
+    def cte(self, msg):
+        self.cte = msg.data
+        rospy.logwarn("CTE: {a:f}".format(a=self.cte))
+
+
+    def pose_cb(self, msg):
+        self.pose = msg
+
     def dbw_enabled_cb( self, msg):
         self.dbw_enabled  = msg
  
@@ -109,16 +131,23 @@ class DBWNode(object):
         self.angular_vel  = msg.twist.angular.z     # target angular velocity
         #rospy.logwarn("angular_vel: {a:f}".format(a=self.angular_vel))
 
+    def steering_report_cb(self, msg):
+        self.lastSteeringWheelAngle = msg.steering_wheel_angle_cmd
+        rospy.logwarn("steering wheel angle feedback (degrees): {a:f}".format(a=self.lastSteeringWheelAngle))
+
     def velocity_cb( self, msg):
-        self.current_vel  = msg.twist.linear.x 
+        self.current_vel  = msg.twist.linear.x
+
     # ------------------------------------------------------
 
-    def publish(self, throttle, brake, steer):
+    def publish(self, throttle, brake, steer, error, angular_vel):
         tcmd = ThrottleCmd()
         tcmd.enable = True
         tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
         tcmd.pedal_cmd = throttle
         self.throttle_pub.publish(tcmd)
+        self.velocity_error_pub.publish(error)
+        self.angular_vel_pub.publish(angular_vel)
 
         scmd = SteeringCmd()
         scmd.enable = True

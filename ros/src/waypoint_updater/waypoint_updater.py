@@ -4,6 +4,7 @@ import numpy as np
 import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
+from std_msgs.msg import Float64
 from scipy.spatial import KDTree
 
 import math
@@ -28,7 +29,7 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 # calculate Euclidean distance
 def distance( x1, y1, x2, y2):
-    return math.sqrt( (x2-x1)**2 + (y2-y1)**2 );
+    return math.sqrt( (x2-x1)**2 + (y2-y1)**2 )
 
 
 class WaypointUpdater(object):
@@ -42,14 +43,15 @@ class WaypointUpdater(object):
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
         # outgoing topic
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=400)
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.cte_pub = rospy.Publisher('cteFromWayPointUpdater', Float64, queue_size=1)
 
         # TODO: Add other member variables you need below
         self.pose           = None
         self.base_waypoints = None
         self.waypoints_2d   = None
         self.waypoint_tree  = None
-
+        self.cte            = None
         self.loop()
     
     # Control publishing frequency
@@ -59,8 +61,9 @@ class WaypointUpdater(object):
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree: 
                 # Get closest waypoint  
-                closest_waypoint_idx = self.get_closest_waypoint_idx()
-                self.publish_waypoints( closest_waypoint_idx)
+                closest_waypoint_idx, cte = self.get_closest_waypoint_idx()
+                self.publish_waypoints( closest_waypoint_idx, cte)
+
             rate.sleep()
 
     def get_closest_waypoint_idx(self):
@@ -83,17 +86,32 @@ class WaypointUpdater(object):
         if val > 0:
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
 
-        return closest_idx
 
-    def publish_waypoints(self, closest_idx):
+        # For computing CTE
+        x0 = x
+        y0 = y
+
+        x1 = self.waypoints_2d[closest_idx - 1][0]
+        y1 = self.waypoints_2d[closest_idx - 1][1]
+
+        x2 = self.waypoints_2d[closest_idx][0]
+        y2 = self.waypoints_2d[closest_idx][1]
+
+        cte = math.fabs((y2 - y1)*x0  -  (x2 - x1)*y0  + x2*y1  - y2*x1) / math.sqrt( math.pow(y2 - y1, 2.0) +  math.pow(x2 - x1, 2.0))
+
+
+
+        return closest_idx, cte
+
+    def publish_waypoints(self, closest_idx, cte):
         lane = Lane()
 
         end_pt = min( closest_idx + LOOKAHEAD_WPS, len(self.base_waypoints.waypoints) )
         lane.header    = self.base_waypoints.header
         lane.waypoints = self.base_waypoints.waypoints[ closest_idx: end_pt]
         #rospy.logwarn("publishing waypoints: {a:d}:{b:d}".format(a=closest_idx, b=end_pt))
-        self.final_waypoints_pub.publish( lane)
-
+        self.final_waypoints_pub.publish( lane )
+        self.cte_pub.publish( cte )
 
     # Incoming topic #1 callback 
     def pose_cb(self, msg):
