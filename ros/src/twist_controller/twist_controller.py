@@ -95,7 +95,7 @@ class Controller(object):
 
         #throttle = clamp(throttle, 0, 0.05)
 
-        #rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
+        rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
         #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
         #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
         #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
@@ -103,9 +103,9 @@ class Controller(object):
         #rospy.logwarn( "\n")
         #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
 
-        #rospy.logwarn( "steering: {0}".format(steering) )
-        #rospy.logwarn( "throttle: \t {0}".format(throttle) )
-        #rospy.logwarn( "\n")
+        rospy.logwarn( "steering: {0}".format(steering) )
+        rospy.logwarn( "throttle: \t {0}".format(throttle) )
+        rospy.logwarn( "\n")
         self.debug_counter = self.debug_counter + 1
  
         return throttle, brake, steering
