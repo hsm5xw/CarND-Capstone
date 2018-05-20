@@ -113,11 +113,12 @@ class DBWNode(object):
     # callback routines to grab and store data from incoming topics
     # -----------------------------------------------------
     def cteFromWayPointFollower(self, msg):
-        rospy.logwarn("CTE From Waypoint Follower: {a:f}".format(a=msg.data))
+        #rospy.logwarn("CTE From Waypoint Follower: {a:f}".format(a=msg.data))
+        pass
 
     def cte(self, msg):
         self.cte = msg.data
-        rospy.logwarn("CTE: {a:f}".format(a=self.cte))
+        #rospy.logwarn("CTE: {a:f}".format(a=self.cte))
 
 
     def pose_cb(self, msg):
@@ -133,7 +134,7 @@ class DBWNode(object):
 
     def steering_report_cb(self, msg):
         self.lastSteeringWheelAngle = msg.steering_wheel_angle_cmd
-        rospy.logwarn("steering wheel angle feedback (degrees): {a:f}".format(a=self.lastSteeringWheelAngle))
+        #rospy.logwarn("steering wheel angle feedback (degrees): {a:f}".format(a=self.lastSteeringWheelAngle))
 
     def velocity_cb( self, msg):
         self.current_vel  = msg.twist.linear.x

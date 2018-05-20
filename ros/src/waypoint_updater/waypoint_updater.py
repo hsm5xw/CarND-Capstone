@@ -6,6 +6,7 @@ from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 from std_msgs.msg import Float64
 from scipy.spatial import KDTree
+from tf.transformations import euler_from_quaternion
 
 import math
 
@@ -99,7 +100,41 @@ class WaypointUpdater(object):
 
         cte = math.fabs((y2 - y1)*x0  -  (x2 - x1)*y0  + x2*y1  - y2*x1) / math.sqrt( math.pow(y2 - y1, 2.0) +  math.pow(x2 - x1, 2.0))
 
+        # For computing CTE - #2
+        orientation = self.pose.pose.orientation   # convert quaternion to yaw
+        _, _,yaw    = euler_from_quaternion( [orientation.x, orientation.y, orientation.z, orientation.w])
+        yaw         = yaw * (-1)                   # sign in the simulator is flipped
 
+        N = 10
+        start_idx = max( closest_idx - 5, 0)
+        end_idx   = min( closest_idx + 5, len(self.waypoints_2d)-1 )
+
+        ptsx_transformed = []
+        ptsy_transformed = []
+ 
+        # Convert Waypoints from Map's coordinates to Car's coordinates
+        for i in range(start_idx, end_idx):
+            # shift car reference
+            pts = self.waypoints_2d[i]
+            dx  = pts[0] - x0
+            dy  = pts[1] - y0
+ 
+            # Now the car is at (0,0) with angle 0
+            ptsx_transformed.append( dx * math.cos(yaw) - dy * math.sin(yaw) )
+            ptsy_transformed.append( dx * math.sin(yaw) + dy * math.cos(yaw) )
+
+        ptsx_transformed_arr = np.array( ptsx_transformed)
+        ptsx_transformed_arr = np.array( ptsy_transformed)
+
+        # Fit polynomial to Waypoints (3rd order) 
+        coeffs = np.polyfit( ptsx_transformed, ptsy_transformed, 3) # coeffs of 3rd order polynomial
+        cte2  = -np.polyval( coeffs, 0);  
+
+        rospy.logwarn("cte : {}".format(cte) )
+        rospy.logwarn("cte2: {}".format( abs(cte2) ) )
+
+        #rospy.logwarn("current_yaw: {}".format(current_yaw) )
+        #rospy.logwarn("current_yaw (degrees): {}".format(current_yaw * 180 / math.pi) )
 
         return closest_idx, cte
 
