@@ -231,6 +231,20 @@ bool PurePursuit::interpolateNextTarget(int next_waypoint, geometry_msgs::Point 
   }
 }
 
+double PurePursuit::computeCTE() const
+{
+    double a = 0;
+    double b = 0;
+    double c = 0;
+    getLinearEquation(current_waypoints_.getWaypointPosition(1), current_waypoints_.getWaypointPosition(2), &a, &b, &c);
+    double displacement = getDistanceBetweenLineAndPoint(current_pose_.pose.position, a, b, c);
+    double relative_angle = getRelativeAngle(current_waypoints_.getWaypointPose(1), current_pose_.pose);
+
+    std::cout << "relative angle: " << relative_angle << std::endl;
+
+    return(((relative_angle > 0.15) - (relative_angle < 0.15)) * displacement);
+}
+
 bool PurePursuit::verifyFollowing() const
 {
   double a = 0;
@@ -354,7 +368,7 @@ geometry_msgs::TwistStamped PurePursuit::outputTwist(geometry_msgs::Twist t) con
   return twist;
 }
 
-geometry_msgs::TwistStamped PurePursuit::go()
+geometry_msgs::TwistStamped PurePursuit::go(std_msgs::Float64& cte)
 {
   if(!pose_set_ || !waypoint_set_ || !velocity_set_){
     if(!pose_set_) {
@@ -368,6 +382,9 @@ geometry_msgs::TwistStamped PurePursuit::go()
     }
     return outputZero();
   }
+
+   cte.data = computeCTE();
+
 
   bool interpolate_flag = false;
 

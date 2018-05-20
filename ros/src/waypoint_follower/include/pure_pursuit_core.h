@@ -35,6 +35,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Float64.h>
 // C++ includes
 #include <memory>
 #include "libwaypoint_follower.h"
@@ -84,6 +85,7 @@ private:
   bool interpolateNextTarget(int next_waypoint, geometry_msgs::Point *next_target) const;
   bool verifyFollowing() const;
   geometry_msgs::Twist calcTwist(double curvature, double cmd_velocity) const;
+  double computeCTE() const;
   void getNextWaypoint();
   geometry_msgs::TwistStamped outputZero() const;
   geometry_msgs::TwistStamped outputTwist(geometry_msgs::Twist t) const;
@@ -97,9 +99,9 @@ public:
     , const_lookahead_distance_(4.0)
     , initial_velocity_(5.0)
     , lookahead_distance_calc_ratio_(2.0)
-    , minimum_lookahead_distance_(6.0)
-    , displacement_threshold_(0.2)
-    , relative_angle_threshold_(5.)
+    , minimum_lookahead_distance_(1.0)
+    , displacement_threshold_(0.0001)
+    , relative_angle_threshold_(0.000001)
     , waypoint_set_(false)
     , pose_set_(false)
     , velocity_set_(false)
@@ -135,7 +137,7 @@ public:
     return lookahead_distance_;
   }
   // processing for ROS
-  geometry_msgs::TwistStamped go();
+  geometry_msgs::TwistStamped go(std_msgs::Float64& cte);
 };
 }
 

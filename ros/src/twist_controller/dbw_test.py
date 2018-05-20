@@ -4,7 +4,7 @@ import os
 import csv
 
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float32
 from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
 
 
@@ -31,6 +31,8 @@ class DBWTestNode(object):
         rospy.Subscriber('/vehicle/steering_cmd', SteeringCmd, self.steer_cb)
         rospy.Subscriber('/vehicle/throttle_cmd', ThrottleCmd, self.throttle_cb)
         rospy.Subscriber('/vehicle/brake_cmd', BrakeCmd, self.brake_cb)
+        rospy.Subscriber('/vehicle/velocity_error', Float32, self.velocity_error_cb)
+        rospy.Subscriber('/vehicle/angular_velocity', Float32, self.angular_velocity_error_cb)
 
         rospy.Subscriber('/actual/steering_cmd', SteeringCmd, self.actual_steer_cb)
         rospy.Subscriber('/actual/throttle_cmd', ThrottleCmd, self.actual_throttle_cb)
@@ -38,12 +40,11 @@ class DBWTestNode(object):
 
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
 
-        self.steer = self.throttle = self.brake = None
+        self.steer = self.throttle = self.brake = self.velocity_error = None
 
         self.steer_data = []
         self.throttle_data = []
         self.brake_data = []
-
         self.dbw_enabled = False
 
         base_path = os.path.dirname(os.path.abspath(__file__))
@@ -57,7 +58,7 @@ class DBWTestNode(object):
         rate = rospy.Rate(10) # 10Hz
         while not rospy.is_shutdown():
             rate.sleep()
-        fieldnames = ['actual', 'proposed']
+        fieldnames = ['actual', 'proposed', 'linearVelocityError', 'angularVelocity']
 
         with open(self.steerfile, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -74,6 +75,15 @@ class DBWTestNode(object):
             writer.writeheader()
             writer.writerows(self.brake_data)
 
+
+    def velocity_error_cb(self, msg):
+        self.velocity_error = msg.data
+
+
+    def angular_velocity_error_cb(self, msg):
+        self.angular_velocity_error = msg.data
+
+
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg.data
 
@@ -89,19 +99,26 @@ class DBWTestNode(object):
     def actual_steer_cb(self, msg):
         if self.dbw_enabled and self.steer is not None:
             self.steer_data.append({'actual': msg.steering_wheel_angle_cmd,
-                                    'proposed': self.steer})
+                                    'proposed': self.steer,
+                                    'linearVelocityError': self.velocity_error,
+                                    'angularVelocity': self.angular_velocity_error})
             self.steer = None
 
     def actual_throttle_cb(self, msg):
         if self.dbw_enabled and self.throttle is not None:
             self.throttle_data.append({'actual': msg.pedal_cmd,
-                                       'proposed': self.throttle})
+                                       'proposed': self.throttle,
+                                        'linearVelocityError': self.velocity_error,
+                                       'angularVelocity': self.angular_velocity_error})
             self.throttle = None
+            #self.velocity_error = None
 
     def actual_brake_cb(self, msg):
         if self.dbw_enabled and self.brake is not None:
             self.brake_data.append({'actual': msg.pedal_cmd,
-                                    'proposed': self.brake})
+                                    'proposed': self.brake,
+                                    'linearVelocityError': self.velocity_error,
+                                    'angularVelocity': self.angular_velocity_error})
             self.brake = None
 
 

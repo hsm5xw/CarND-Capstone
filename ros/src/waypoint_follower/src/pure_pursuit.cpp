@@ -52,6 +52,7 @@ int main(int argc, char **argv)
   ROS_INFO("set publisher...");
   // publish topic
   ros::Publisher cmd_velocity_publisher = nh.advertise<geometry_msgs::TwistStamped>("twist_cmd", 1);
+  ros::Publisher CTE_publisher = nh.advertise<std_msgs::Float64>("cte", 1);
 
   ROS_INFO("set subscriber...");
   // subscribe topic
@@ -67,7 +68,12 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     ros::spinOnce();
-    cmd_velocity_publisher.publish(pp.go());
+
+    std_msgs::Float64 cte;
+
+    cmd_velocity_publisher.publish(pp.go(cte));
+    CTE_publisher.publish(cte);
+
     loop_rate.sleep();
   }
 
