@@ -137,7 +137,7 @@ public:
     return lookahead_distance_;
   }
   // processing for ROS
-  geometry_msgs::TwistStamped go(std_msgs::Float64& cte);
+  geometry_msgs::TwistStamped go();
 };
 }
 

@@ -49,7 +49,7 @@ class Bridge(object):
             '/vehicle/steering_cmd': self.callback_steering,
             '/vehicle/throttle_cmd': self.callback_throttle,
             '/vehicle/brake_cmd': self.callback_brake,
-        '/final_waypoints': self.callback_path
+            '/final_waypoints': self.callback_path
         }
 
         self.subscribers = [rospy.Subscriber(e.topic, TYPE[e.type], self.callbacks[e.topic])
@@ -133,10 +133,7 @@ class Bridge(object):
         position = (data['x'], data['y'], data['z'])
         orientation = tf.transformations.quaternion_from_euler(0, 0, math.pi * data['yaw']/180.)
         self.broadcast_transform("base_link", position, orientation)
-        print("Odo publish: {a:f}, {b:f}, {c:f}".format(a=pose.pose.position.x, b=pose.pose.position.y, c=pose.pose.position.z))
-
-        #rospy.logwarn( "data[yaw] : {0}".format(data['yaw']) )
-
+        
         self.publishers['current_pose'].publish(pose)
         self.vel = data['velocity']* 0.44704
         self.angular = self.calc_angular(data['yaw'] * math.pi/180.)

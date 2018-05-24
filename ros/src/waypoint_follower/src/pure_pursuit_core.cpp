@@ -39,7 +39,6 @@ void PurePursuit::callbackFromCurrentPose(const geometry_msgs::PoseStampedConstP
 {
   current_pose_.header = msg->header;
   current_pose_.pose = msg->pose;
-  std::cout << "Got New Pose!" << std::endl;
   pose_set_ = true;
 }//processing frequency
 
@@ -60,7 +59,7 @@ double PurePursuit::getCmdVelocity(int waypoint) const
 {
   if (current_waypoints_.isEmpty())
   {
-    ROS_INFO_STREAM("waypoint : not loaded path");
+    //ROS_INFO_STREAM("waypoint : not loaded path");
     return 0;
   }
 
@@ -79,7 +78,7 @@ void PurePursuit::calcLookaheadDistance(int waypoint)
                       : ld > maximum_lookahead_distance ? maximum_lookahead_distance
                       : ld ;
 
-  ROS_INFO("lookahead distance: %f",lookahead_distance_);
+  //ROS_INFO("lookahead distance: %f",lookahead_distance_);
 
   return ;
 }
@@ -99,7 +98,7 @@ double PurePursuit::calcCurvature(geometry_msgs::Point target) const
     else
       kappa = -KAPPA_MIN_;
   }
-  ROS_INFO_STREAM("kappa :" << kappa);
+  //ROS_INFO_STREAM("kappa :" << kappa);
   return kappa;
 }
 
@@ -231,6 +230,7 @@ bool PurePursuit::interpolateNextTarget(int next_waypoint, geometry_msgs::Point 
   }
 }
 
+/*
 double PurePursuit::computeCTE() const
 {
     double a = 0;
@@ -244,6 +244,7 @@ double PurePursuit::computeCTE() const
 
     return(((relative_angle > 0.15) - (relative_angle < 0.15)) * displacement);
 }
+*/
 
 bool PurePursuit::verifyFollowing() const
 {
@@ -287,8 +288,6 @@ geometry_msgs::Twist PurePursuit::calcTwist(double curvature, double cmd_velocit
   // change to always update (*)
   twist.angular.z = current_velocity_.twist.linear.x * curvature;
   //prev_angular_velocity = twist.angular.z;
-
-  std::cout << "Twist: Z: " << twist.angular.z << std::endl;
   return twist;
 }
 
@@ -309,7 +308,7 @@ void PurePursuit::getNextWaypoint()
     // if search waypoint is the last
     if (i == (path_size - 1))
     {
-      ROS_INFO("search waypoint is the last");
+      //ROS_INFO("search waypoint is the last");
       num_of_next_waypoint_ = i;
       return;
     }
@@ -358,17 +357,16 @@ geometry_msgs::TwistStamped PurePursuit::outputTwist(geometry_msgs::Twist t) con
 
 
   double a = v * omega;
-  ROS_INFO("lateral accel = %lf", a);
+  //ROS_INFO("lateral accel = %lf", a);
 
   twist.twist.linear.x = fabs(a) > g_lateral_accel_limit ? max_v
                     : v;
   twist.twist.angular.z = omega;
-  std::cout << "z as calculated: " << twist.twist.angular.z << std::endl;
 
   return twist;
 }
 
-geometry_msgs::TwistStamped PurePursuit::go(std_msgs::Float64& cte)
+geometry_msgs::TwistStamped PurePursuit::go()
 {
   if(!pose_set_ || !waypoint_set_ || !velocity_set_){
     if(!pose_set_) {
@@ -382,9 +380,6 @@ geometry_msgs::TwistStamped PurePursuit::go(std_msgs::Float64& cte)
     }
     return outputZero();
   }
-
-   cte.data = computeCTE();
-
 
   bool interpolate_flag = false;
 
@@ -403,7 +398,6 @@ geometry_msgs::TwistStamped PurePursuit::go(std_msgs::Float64& cte)
       num_of_next_waypoint_ == (static_cast<int>(current_waypoints_.getSize() - 1)))
   {
     position_of_next_target_ = current_waypoints_.getWaypointPosition(num_of_next_waypoint_);
-    std::cout << "Publishing twist from line 385 with arg:" << position_of_next_target_ << " " << getCmdVelocity(0) << std::endl;
     return outputTwist(calcTwist(calcCurvature(position_of_next_target_), getCmdVelocity(0)));
   }
 
@@ -417,7 +411,7 @@ geometry_msgs::TwistStamped PurePursuit::go(std_msgs::Float64& cte)
   }
 
   // ROS_INFO("next_target : ( %lf , %lf , %lf)", next_target.x, next_target.y,next_target.z);
-  std::cout << "Publishing twist from line 399 with arg:" << position_of_next_target_ << " " << getCmdVelocity(0) << std::endl;
+  
   return outputTwist(calcTwist(calcCurvature(position_of_next_target_), getCmdVelocity(0)));
 
 // ROS_INFO("linear : %lf, angular : %lf",twist.twist.linear.x,twist.twist.angular.z);

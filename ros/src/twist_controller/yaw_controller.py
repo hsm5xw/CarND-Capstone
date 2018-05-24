@@ -4,6 +4,7 @@
 import math
 from math import atan
 import rospy
+
 class YawController(object):
     def __init__(self, wheel_base, steer_ratio, min_speed, max_lat_accel, max_steer_angle, pSteering, iSteering, dSteering):
         self.wheel_base    = wheel_base
@@ -23,8 +24,6 @@ class YawController(object):
         self.iSteering = iSteering
         self.dSteering = dSteering
 
-        #self.last_steering_angle = 0.0
-
     def get_angle(self, radius):
         if math.fabs(radius) < 0.00001:
             return 0.0
@@ -35,43 +34,22 @@ class YawController(object):
     def get_steering(self, linear_velocity, angular_velocity, current_velocity, lastSteeringWheelAngle):
 
         angular_velocity = current_velocity * angular_velocity / linear_velocity if abs(linear_velocity) > 0. else 0.
-        #rospy.logwarn("angular_vel(28): {a:f}, linear_velocity: {b:f}, current_velocity: {c:f}".format(a=angular_velocity, b=linear_velocity, c=current_velocity))
-
+        
         if abs(current_velocity) > 0.1:
             max_yaw_rate = abs(self.max_lat_accel / current_velocity);
             angular_velocity = max(-max_yaw_rate, min(max_yaw_rate, angular_velocity))
 
-
-
-        steering_angle_new = self.get_angle(max(current_velocity, self.min_speed) / angular_velocity) if abs(angular_velocity) > 0. else 0.0;
-
-        #steering_angle = steering_angle_new - self.last_steering_angle
-
-        #self.last_steering_angle = steering_angle_new
-
-
-        #rospy.logwarn(
-        #    "angular_vel(39): {a:f}, linear_velocity: {b:f}, current_velocity: {c:f}, steering: {d:f}".format(a=angular_velocity,
-        #                                                                                     b=linear_velocity,
-        #                                                                                     c=current_velocity,
-        #                                                                                     d=steering_angle_new))
-
-
+        steering_angle_new = self.get_angle(max(current_velocity, self.min_speed) / angular_velocity) if abs(angular_velocity) > 0. else 0.0
         return steering_angle_new
 
 
-    def get_steeringFromCTE(self, linear_vel, angular_vel, current_vel, lastSteeringWheelAngle, cte):
-        self.integralError = self.integralError + cte
+    def get_steeringFromCTE(self, cte):
+        self.integralError      = self.integralError + cte
         self.proportionalError  = cte
-        self.differentialError = cte - self.oldCTE
+        self.differentialError  = cte - self.oldCTE
         self.oldCTE = cte
 
         steering = - (self.pSteering * self.proportionalError + self.iSteering * self.integralError + self.dSteering * self.differentialError)
 
-        #steering = steering - (lastSteeringWheelAngle * math.pi / 180.)
-
         return max(self.min_angle, min(self.max_angle, steering))
-
-
-
 

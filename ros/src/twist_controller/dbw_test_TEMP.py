@@ -4,17 +4,13 @@ import os
 import csv
 
 import rospy
-from std_msgs.msg import Bool, Float32
+from std_msgs.msg import Bool
 from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
 
 
 '''
 You can use this file to test your DBW code against a bag recorded with a reference implementation.
-The bag can be found at https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/files/reference.bag.zip
-
-To use the downloaded bag file, rename it to 'dbw_test.rosbag.bag' and place it in the CarND-Capstone/data folder.
-Then with roscore running, you can then use roslaunch with the dbw_test.launch file found in 
-<project_repo>/ros/src/twist_controller/launch.
+The bag can be found at https://drive.google.com/open?id=0B2_h37bMVw3iT0ZEdlF4N01QbHc.
 
 This file will produce 3 csv files which you can process to figure out how your DBW node is
 performing on various commands.
@@ -31,8 +27,6 @@ class DBWTestNode(object):
         rospy.Subscriber('/vehicle/steering_cmd', SteeringCmd, self.steer_cb)
         rospy.Subscriber('/vehicle/throttle_cmd', ThrottleCmd, self.throttle_cb)
         rospy.Subscriber('/vehicle/brake_cmd', BrakeCmd, self.brake_cb)
-        rospy.Subscriber('/vehicle/velocity_error', Float32, self.velocity_error_cb)
-        rospy.Subscriber('/vehicle/angular_velocity', Float32, self.angular_velocity_error_cb)
 
         rospy.Subscriber('/actual/steering_cmd', SteeringCmd, self.actual_steer_cb)
         rospy.Subscriber('/actual/throttle_cmd', ThrottleCmd, self.actual_throttle_cb)
@@ -40,11 +34,12 @@ class DBWTestNode(object):
 
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
 
-        self.steer = self.throttle = self.brake = self.velocity_error = None
+        self.steer = self.throttle = self.brake = None
 
         self.steer_data = []
         self.throttle_data = []
         self.brake_data = []
+
         self.dbw_enabled = False
 
         base_path = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +53,7 @@ class DBWTestNode(object):
         rate = rospy.Rate(10) # 10Hz
         while not rospy.is_shutdown():
             rate.sleep()
-        fieldnames = ['actual', 'proposed', 'linearVelocityError', 'angularVelocity']
+        fieldnames = ['actual', 'proposed']
 
         with open(self.steerfile, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -75,15 +70,6 @@ class DBWTestNode(object):
             writer.writeheader()
             writer.writerows(self.brake_data)
 
-
-    def velocity_error_cb(self, msg):
-        self.velocity_error = msg.data
-
-
-    def angular_velocity_error_cb(self, msg):
-        self.angular_velocity_error = msg.data
-
-
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg.data
 
@@ -99,26 +85,19 @@ class DBWTestNode(object):
     def actual_steer_cb(self, msg):
         if self.dbw_enabled and self.steer is not None:
             self.steer_data.append({'actual': msg.steering_wheel_angle_cmd,
-                                    'proposed': self.steer,
-                                    'linearVelocityError': self.velocity_error,
-                                    'angularVelocity': self.angular_velocity_error})
+                                    'proposed': self.steer})
             self.steer = None
 
     def actual_throttle_cb(self, msg):
         if self.dbw_enabled and self.throttle is not None:
             self.throttle_data.append({'actual': msg.pedal_cmd,
-                                       'proposed': self.throttle,
-                                        'linearVelocityError': self.velocity_error,
-                                       'angularVelocity': self.angular_velocity_error})
+                                       'proposed': self.throttle})
             self.throttle = None
-            #self.velocity_error = None
 
     def actual_brake_cb(self, msg):
         if self.dbw_enabled and self.brake is not None:
             self.brake_data.append({'actual': msg.pedal_cmd,
-                                    'proposed': self.brake,
-                                    'linearVelocityError': self.velocity_error,
-                                    'angularVelocity': self.angular_velocity_error})
+                                    'proposed': self.brake})
             self.brake = None
 
 

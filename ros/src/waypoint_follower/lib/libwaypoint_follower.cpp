@@ -166,7 +166,7 @@ double getRelativeAngle(geometry_msgs::Pose waypoint_pose, geometry_msgs::Pose v
   relative_waypoint_v.normalize();
   tf::Vector3 relative_pose_v(1, 0, 0);
   double angle = relative_pose_v.angle(relative_waypoint_v) * 180 / M_PI;
-  ROS_INFO("angle : %lf",angle);
+  //ROS_INFO("angle : %lf",angle);
 
   return angle;
 }
@@ -217,7 +217,7 @@ int getClosestWaypoint(const styx_msgs::Lane &current_path, geometry_msgs::Pose 
   }
   else
   {
-    ROS_INFO("no candidate. search closest waypoint from all waypoints...");
+    //ROS_INFO("no candidate. search closest waypoint from all waypoints...");
     // if there is no candidate...
     int waypoint_min = -1;
     double distance_min = DBL_MAX;
@@ -251,7 +251,7 @@ bool getLinearEquation(geometry_msgs::Point start, geometry_msgs::Point end, dou
 
   if (sub_x < error && sub_y < error)
   {
-    ROS_INFO("two points are the same point!!");
+    //ROS_INFO("two points are the same point!!");
     return false;
   }
 
