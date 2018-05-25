@@ -60,6 +60,7 @@ class Controller(object):
         self.vel_lpf             = LowPassFilter(tau, ts)
 
         self.last_time = rospy.get_time()
+        self.last_steering_angle = 0.
 
     """
     :@ linear_vel : target linear velocity
@@ -86,9 +87,13 @@ class Controller(object):
         brake    = 0.
 
         # steering control
-        steering = self.yaw_controller.get_steeringFromCTE( cte)
+        #steering = self.yaw_controller.get_steeringFromCTE( cte)
         #steering = 0.08    # (debug) steer left (+), steer right (-) 
 
+        steering = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel, self.last_steering_angle)
+        # save the current steering angle into last_steering_angle for next 
+        self.last_steering_angle = steering
+        
         # If target linear velocity = 0, then go very slow        
         if linear_vel == 0. and current_vel < 0.1:
             throttle = 0.
