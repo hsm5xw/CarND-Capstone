@@ -61,6 +61,35 @@ class WaypointUpdater(object):
 
             rate.sleep()
 
+    '''
+    find sign of cte, by determining whether the car is left/right of the lane
+    @ closest_idx: closest idx of waypoint ahead of the car
+
+    returns (+) if car is on the left  (positive angle)
+            (-) if car is on the right (negative angle)
+
+    (source: https://stackoverflow.com/questions/5188561/signed-angle-between-two-3d-vectors-with-same-origin-within-the-same-plane)
+    '''
+    def find_cte_sign( self, closest_idx):
+        x = self.pose.pose.position.x
+        y = self.pose.pose.position.y
+        end_idx = min( closest_idx + 1, len(self.base_waypoints.waypoints)-1 )
+
+        next_coord  = self.waypoints_2d[end_idx]
+        prev_coord  = self.waypoints_2d[closest_idx - 1]
+
+        next_wp     = np.array( next_coord)
+        prev_wp     = np.array( prev_coord)
+        pos_vect    = np.array( [x,y])
+
+        v1 = next_wp   - prev_wp
+        v2 = pos_vect  - prev_wp
+  
+        cross = np.cross( np.append(v1, 0), np.append(v2, 0) )
+        sign  = np.dot( [0,0,1], cross)    
+
+        return sign
+
     # get closest waypoint index ahead of the car
     def get_closest_waypoint_idx(self):
         x = self.pose.pose.position.x
@@ -89,7 +118,13 @@ class WaypointUpdater(object):
 
         cte = math.fabs((y2 - y1)*x0  -  (x2 - x1)*y0  + x2*y1  - y2*x1) / math.sqrt( math.pow(y2 - y1, 2.0) +  math.pow(x2 - x1, 2.0))
                    
-        #rospy.logwarn("cte: {a:f}, closest_idx: {b:f}".format( a=cte, b=closest_idx) )  
+        # Find the sign of CTE
+        sign = self.find_cte_sign( closest_idx)
+        cte  = cte * sign
+
+        #if self.debug_counter % 4 == 0:  # modulo by publisher rate
+        #    rospy.logwarn("cte: {a:f}, closest_idx: {b:f}".format( a=cte, b=closest_idx) )
+  
         return closest_idx, cte
 
     def publish_waypoints(self, closest_idx, cte):
