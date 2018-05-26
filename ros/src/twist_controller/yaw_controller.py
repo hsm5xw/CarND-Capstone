@@ -35,7 +35,7 @@ class YawController(object):
     def get_steering(self, linear_velocity, angular_velocity, current_velocity, lastSteeringWheelAngle):
 
         angular_velocity = current_velocity * angular_velocity / linear_velocity if abs(linear_velocity) > 0. else 0.
-        #rospy.logwarn("angular_vel(28): {a:f}, linear_velocity: {b:f}, current_velocity: {c:f}".format(a=angular_velocity, b=linear_velocity, c=current_velocity))
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn("angular_vel(28): {a:f}, linear_velocity: {b:f}, current_velocity: {c:f}".format(a=angular_velocity, b=linear_velocity, c=current_velocity))
 
         if abs(current_velocity) > 0.1:
             max_yaw_rate = abs(self.max_lat_accel / current_velocity);
@@ -50,7 +50,7 @@ class YawController(object):
         #self.last_steering_angle = steering_angle_new
 
 
-        #rospy.logwarn(
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn(
         #    "angular_vel(39): {a:f}, linear_velocity: {b:f}, current_velocity: {c:f}, steering: {d:f}".format(a=angular_velocity,
         #                                                                                     b=linear_velocity,
         #                                                                                     c=current_velocity,

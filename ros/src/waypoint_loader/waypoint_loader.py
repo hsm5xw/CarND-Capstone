@@ -30,9 +30,10 @@ class WaypointLoader(object):
         if os.path.isfile(path):
             waypoints = self.load_waypoints(path)
             self.publish(waypoints)
-            rospy.loginfo('Waypoint Loded')
+            #AUTOMATEDCOMMENTREMOVAL:rospy.loginfo('Waypoint Loded')
         else:
-            rospy.logerr('%s is not a file', path)
+            #AUTOMATEDCOMMENTREMOVAL:rospy.logerr('%s is not a file', path)
+            pass
 
     def quaternion_from_yaw(self, yaw):
         return tf.transformations.quaternion_from_euler(0., 0., yaw)
@@ -83,4 +84,5 @@ if __name__ == '__main__':
     try:
         WaypointLoader()
     except rospy.ROSInterruptException:
-        rospy.logerr('Could not start waypoint node.')
+        #AUTOMATEDCOMMENTREMOVAL:rospy.logerr('Could not start waypoint node.')
+        pass

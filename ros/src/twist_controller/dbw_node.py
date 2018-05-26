@@ -96,7 +96,7 @@ class DBWNode(object):
             # You should only publish the control commands if dbw is enabled
 
             if not None in (self.current_vel, self.linear_vel, self.angular_vel, self.lastSteeringWheelAngle, self.cte):
-                #rospy.logwarn("angular_vel(91): {a:f}".format(a=self.angular_vel))
+                ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn("angular_vel(91): {a:f}".format(a=self.angular_vel))
                 self.throttle, self.brake, self.steering, self.error = self.controller.control( self.current_vel,
                                                                                     self.dbw_enabled,
                                                                                     self.linear_vel,
@@ -113,11 +113,12 @@ class DBWNode(object):
     # callback routines to grab and store data from incoming topics
     # -----------------------------------------------------
     def cteFromWayPointFollower(self, msg):
-        rospy.logwarn("CTE From Waypoint Follower: {a:f}".format(a=msg.data))
+        #AUTOMATEDCOMMENTREMOVAL:rospy.logwarn("CTE From Waypoint Follower: {a:f}".format(a=msg.data))
+        pass
 
     def cte(self, msg):
         self.cte = msg.data
-        rospy.logwarn("CTE: {a:f}".format(a=self.cte))
+        #AUTOMATEDCOMMENTREMOVAL:rospy.logwarn("CTE: {a:f}".format(a=self.cte))
 
 
     def pose_cb(self, msg):
@@ -129,11 +130,11 @@ class DBWNode(object):
     def twist_cb( self, msg):
         self.linear_vel   = msg.twist.linear.x      # target linear velocity
         self.angular_vel  = msg.twist.angular.z     # target angular velocity
-        #rospy.logwarn("angular_vel: {a:f}".format(a=self.angular_vel))
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn("angular_vel: {a:f}".format(a=self.angular_vel))
 
     def steering_report_cb(self, msg):
         self.lastSteeringWheelAngle = msg.steering_wheel_angle_cmd
-        rospy.logwarn("steering wheel angle feedback (degrees): {a:f}".format(a=self.lastSteeringWheelAngle))
+        #AUTOMATEDCOMMENTREMOVAL:rospy.logwarn("steering wheel angle feedback (degrees): {a:f}".format(a=self.lastSteeringWheelAngle))
 
     def velocity_cb( self, msg):
         self.current_vel  = msg.twist.linear.x

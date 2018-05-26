@@ -78,7 +78,7 @@ class Controller(object):
         current_vel = self.vel_lpf.filt( current_vel)
 
         # steering control
-        #rospy.logwarn("angular_vel(73): {a:f}".format(a=angular_vel))
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn("angular_vel(73): {a:f}".format(a=angular_vel))
         #steering  = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel, lastSteeringWheelAngle)
         steering = self.yaw_controller.get_steeringFromCTE(linear_vel, angular_vel, current_vel, lastSteeringWheelAngle, cte)
         #steering  = steering - 0.04   # temporary ... (will delete)
@@ -115,17 +115,17 @@ class Controller(object):
 
         #throttle = clamp(throttle, 0, 0.05)
 
-        #rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
-        #rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
-        #rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
-        #rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
-        #rospy.logwarn( "Angular vel: \t {0}".format(angular_vel) )
-        #rospy.logwarn( "\n")
-        #rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "########### debug_count: {0} ###############".format(self.debug_counter) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "Target  linear  vel: {0}".format(linear_vel) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "Target  angular vel: {0}".format(angular_vel) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "Current vel: \t {0}".format(current_vel) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "Angular vel: \t {0}".format(angular_vel) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "\n")
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "Filtered vel: \t {0}".format(self.vel_lpf.get()) )
 
-        #rospy.logwarn( "steering: {0}".format(steering) )
-        #rospy.logwarn( "throttle: \t {0}".format(throttle) )
-        #rospy.logwarn( "\n")
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "steering: {0}".format(steering) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "throttle: \t {0}".format(throttle) )
+        ##AUTOMATEDCOMMENTREMOVAL:rospy.logwarn( "\n")
         self.debug_counter = self.debug_counter + 1
  
         return throttle, brake, steering, vel_error
