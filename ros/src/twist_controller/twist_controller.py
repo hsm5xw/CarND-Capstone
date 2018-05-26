@@ -21,7 +21,7 @@ iSteering = 0.00055
 dSteering = 0.0001
 
 mn = 0.      # minimum throttle value
-mx = 0.3     # maximum throttle value
+mx = 0.15     # maximum throttle value
 
 tau = 0.5    # 1/(2pi*tau) = cutoff frequency
 ts  = 0.02   # sample time
@@ -93,6 +93,15 @@ class Controller(object):
         steering = self.yaw_controller.get_steering(linear_vel, angular_vel, current_vel, self.last_steering_angle)
         # save the current steering angle into last_steering_angle for next 
         self.last_steering_angle = steering
+        
+        # apply brakes if steering angle is big, and speed is at 10 mph or higher
+        if ( current_vel > 9*ONE_MPH ):
+            if (abs(steering) > 0.30):
+                brake = 5
+            elif (abs(steering) > 0.15):
+                brake = 2
+            elif (abs(steering) > 0.10):
+                brake = 1
         
         # If target linear velocity = 0, then go very slow        
         if linear_vel == 0. and current_vel < 0.1:
