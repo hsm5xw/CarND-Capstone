@@ -4,7 +4,7 @@ import numpy as np
 import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Int32
 from scipy.spatial import cKDTree  # use cKDTree instead
 from tf.transformations import euler_from_quaternion
 
@@ -36,6 +36,7 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/current_pose',   PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint', Lane, self.traffic_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
@@ -48,6 +49,9 @@ class WaypointUpdater(object):
         self.waypoints_2d   = None
         self.waypoint_tree  = None
         self.cte            = None
+        self.traffic_waypoint = None
+        
+        # the loop waiting for messsages
         self.loop()
     
     def loop(self):
@@ -56,8 +60,19 @@ class WaypointUpdater(object):
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree: 
                 closest_waypoint_idx, cte = self.get_closest_waypoint_idx()
-                self.publish_waypoints( closest_waypoint_idx, cte)
-                self.debug_counter += 1
+                if self.traffic_waypoint and self.traffic_waypoint > -1:
+                    # there is a Red light ahead
+                    # this is very basic, I just want to see that the car can stop when a Red light signal is received
+                    lane = Lane()
+                    lane.header = self.base_waypoints.header
+                    lane.waypoints = self.base_waypoints.waypoints[closest_waypoint_idx: self.traffic_waypoint]
+                    self.set_waypoint_velocity(lane.waypoints, len(lane.waypoints)-2, 0)
+                    #publish the waypoints
+                    self.final_waypoints_pub.publish(lane)
+                    self.cte_pub.publish(cte)
+                else:              
+                    self.publish_waypoints( closest_waypoint_idx, cte)
+                    self.debug_counter += 1
 
             rate.sleep()
 
@@ -154,7 +169,7 @@ class WaypointUpdater(object):
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
-        pass
+        self.traffic_waypoint = msg.data
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
