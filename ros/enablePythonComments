@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+#Enable All Comments:
+find . -type f -name '*.py' -exec sed -i 's/#AUTOMATEDCOMMENTREMOVAL:rospy.lo/rospy.lo/g' {} +
