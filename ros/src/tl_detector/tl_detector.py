@@ -60,21 +60,14 @@ class TLDetector(object):
         self.last_state  = TrafficLight.UNKNOWN
         self.last_wp     = -1
         self.state_count = 0
+        
+        # keep count of the image so far, so only process the nth image
+        # This is to help the lag problem
+        self.image_count = 0
 
-        self.loop()
-
-    def loop(self):
-        rate = rospy.Rate(1)  # (PUBLISHER_RATE) Hz
-
-        while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints and self.waypoint_tree: 
-             
-                if not self.has_image:
-                    self.upcoming_red_light_pub.publish( Int32(-100) ) 
-
-                self.debug_counter += 1
-
-            rate.sleep()
+        # Let the tl_detector spin, all the work is done by the _cb functions.
+        # as the image_cb is called and received a new image, it will determine the color of the stop light
+        rospy.spin()
         
     # callback routines
     # ---------------------------------------------------------------------------------------
@@ -97,32 +90,42 @@ class TLDetector(object):
         Args:
             msg (Image): image from car-mounted camera
         """
-        self.has_image    = True
-        self.camera_image = msg
-
-        # Get (waypoint index, color) of the closest traffic light ahead
-        light_wp, state   = self.process_traffic_lights()
-
-        '''
-        Publish upcoming red lights at camera frequency.
-        Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
-        of times till we start using it. Otherwise the previous stable state is
-        used.
-        '''
-        # color transition  ex) green -> yellow
-        if self.state != state:
-            self.state_count = 0
-            self.state       = state
-
-        elif self.state_count >= STATE_COUNT_THRESHOLD:
-            self.last_state = self.state
-            light_wp        = light_wp if state == TrafficLight.RED else -1
-            self.last_wp = light_wp
-            self.upcoming_red_light_pub.publish(Int32(light_wp))
+        
+        if (self.image_count > 0):
+            # don't process anything, just publish and return
+            self.image_count -= 1
+            self.upcoming_red_light_pub.publish( Int32(-100) ) 
+            return 1
         else:
-            self.upcoming_red_light_pub.publish(Int32(self.last_wp))
+            # this is the nth image, let's start processing
+            self.image_count = rospy.get_param('image_count', 5)    # set to default 5, only every 5th image is processed
+            
+            self.has_image    = True
+            self.camera_image = msg
 
-        self.state_count += 1
+            # Get (waypoint index, color) of the closest traffic light ahead
+            light_wp, state   = self.process_traffic_lights()
+
+            '''
+            Publish upcoming red lights at camera frequency.
+            Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
+            of times till we start using it. Otherwise the previous stable state is
+            used.
+            '''
+            # color transition  ex) green -> yellow
+            if self.state != state:
+                self.state_count = 0
+                self.state       = state
+
+            elif self.state_count >= STATE_COUNT_THRESHOLD:
+                self.last_state = self.state
+                light_wp        = light_wp if state == TrafficLight.RED else -1
+                self.last_wp = light_wp
+                self.upcoming_red_light_pub.publish(Int32(light_wp))
+            else:
+                self.upcoming_red_light_pub.publish(Int32(self.last_wp))
+
+            self.state_count += 1
     # ----------------------------------------------------------------------------------------
 
     def get_closest_waypoint(self, x, y):
