@@ -59,21 +59,7 @@ class WaypointUpdater(object):
 
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree: 
-                closest_waypoint_idx, cte = self.get_closest_waypoint_idx()
-                if self.traffic_waypoint and self.traffic_waypoint > -1:
-                    # there is a Red light ahead
-                    # this is very basic, I just want to see that the car can stop when a Red light signal is received
-                    lane = Lane()
-                    lane.header = self.base_waypoints.header
-                    lane.waypoints = self.base_waypoints.waypoints[closest_waypoint_idx: self.traffic_waypoint]
-                    self.set_waypoint_velocity(lane.waypoints, len(lane.waypoints)-2, 0)
-                    #publish the waypoints
-                    self.final_waypoints_pub.publish(lane)
-                    self.cte_pub.publish(cte)
-                else:              
-                    self.publish_waypoints( closest_waypoint_idx, cte)
-                    self.debug_counter += 1
-
+                self.publish_waypoints(self, closest_idx, cte)
             rate.sleep()
 
     '''
@@ -142,18 +128,50 @@ class WaypointUpdater(object):
   
         return closest_idx, cte
 
-    def publish_waypoints(self, closest_idx, cte):
-        LOOKAHEAD_WPS  = 100 # Number of waypoints we will publish. You can change this number
-        closest_idx += 2     # see Slack for discussion
-
-        end_pt = min( closest_idx + LOOKAHEAD_WPS, len(self.base_waypoints.waypoints) )
-
-        lane = Lane()
-        lane.header    = self.base_waypoints.header
-        lane.waypoints = self.base_waypoints.waypoints[ closest_idx: end_pt]
-        
-        self.final_waypoints_pub.publish( lane )
+    def publish_waypoints(self):
+        closest_wp_idx, cte = self.get_closest_waypoint_idx()
+        new_lane = self.generate_lane(closest_wp_idx)
+        self.final_waypoints_pub.publish( new_lane )
         self.cte_pub.publish( cte )  # extra (*)
+        
+    def generate_lane(self, closest_idx):
+        LOOKAHEAD_WPS  = 100 # Number of waypoints we will publish. You can change this number
+        
+        # new lane that hold all the waypoints to publish        
+        lane = Lane()
+        lane.header    = self.base_waypoints.header        
+                
+        closest_idx += 2     # see Slack for discussion        
+        end_idx = min( closest_idx + LOOKAHEAD_WPS, len(self.base_waypoints.waypoints) )
+        new_waypoints = self.base_waypoints.waypoints[ closest_idx: end_idx]
+        
+        # check to see if there is a stoplight inside this new path
+        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= end_idx):
+            #there is NO stoplight/line
+            lane.waypoints = new_waypoints
+        else:
+            # there IS a stoplight, prepare to slow down and stop
+            lane.waypoints = self.decelerate_waypoints(new_waypoints, closest_idx)
+            
+        return lane           
+    
+    def decelerate_waypoints(self, waypoints, closest_idx):
+        temp = []
+        for i, wp in enumerate(waypoints):
+            p = Waypoint()
+            p.pose = wp.pose
+            
+            stop_idx = max(self.traffic_waypoint - closest_idx - 2, 0)
+            dist = self.distance(waypoints, i, stop_idx)
+            vel = math.sqrt(2 * MAX_DECEL * dist)
+            if vel < 1.:
+                vel = 0.
+            
+            p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
+            temp.append(p)
+            
+        return temp            
+        
 
     # callback routines
     # ---------------------------------------------------------------------------------------
