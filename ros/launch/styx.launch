@@ -26,6 +26,6 @@
     <param name="Ki" value="0.0" />
     <param name="Kd" value="0.5" />
 
-    <param name="image_count" value="10" />    
+    <param name="image_count" value="0" />    
 
 </launch>
