@@ -26,6 +26,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 #LOOKAHEAD_WPS  = 100 # Number of waypoints we will publish. You can change this number
 #PUBLISHER_RATE = 4
+MAX_DECEL = .5
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -49,7 +50,7 @@ class WaypointUpdater(object):
         self.waypoints_2d   = None
         self.waypoint_tree  = None
         self.cte            = None
-        self.traffic_waypoint = None
+        self.traffic_waypoint = -1
         
         # the loop waiting for messsages
         self.loop()
@@ -146,7 +147,7 @@ class WaypointUpdater(object):
         new_waypoints = self.base_waypoints.waypoints[ closest_idx: end_idx]
         
         # check to see if there is a stoplight inside this new path
-        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= end_idx):
+        if self.traffic_waypoint == -1 or (self.traffic_waypoint >= end_idx):
             #there is NO stoplight/line
             lane.waypoints = new_waypoints
         else:
