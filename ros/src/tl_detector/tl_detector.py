@@ -22,6 +22,9 @@ class TLDetector(object):
         # global debug counter
         self.debug_counter = 0
 
+        self.use_classifier  = rospy.get_param('use_classifier', False)
+        rospy.logwarn("use_classifier: {}".format(self.use_classifier) ) # see if it works ...
+        
         self.pose            = None
         self.base_waypoints  = None
         self.waypoints_2d    = None
@@ -164,21 +167,18 @@ class TLDetector(object):
         Returns:
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
+        if self.use_classifier:       
+            if(not self.has_image):
+                return None
+
+            cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+
+            #Get classification
+            return self.light_classifier.get_classification(cv_image) 
         
-        # For testing, just return the ground-truth light state, directly coming from simulator
-        return light.state
-
-        '''
-        # Uncomment this when we have a trained classifier.
-        if(not self.has_image):
-            self.prev_light_loc = None
-            return False
-
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-
-        #Get classification
-        return self.light_classifier.get_classification(cv_image)
-        '''
+        else:
+            # For testing, just return the ground-truth light state, directly coming from simulator
+            return light.state
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its location and color
@@ -229,14 +229,17 @@ class TLDetector(object):
             # Red: 0, Yellow: 1, Green: 2, Unknown: 4
             state = self.get_light_state(closest_light)
 
-            '''
+            if state is None:
+                 rospy.logwarn("Closest Traffic Light: no state ...")
+                 return -1, TrafficLight.UNKNOWN
+                
             color_dict = { TrafficLight.RED:     'Red',    \
                            TrafficLight.YELLOW:  'Yellow', \
                            TrafficLight.GREEN:   'Green',  \
                            TrafficLight.UNKNOWN: 'Unknown'}
 
             rospy.logwarn("Closest Traffic Light: ({0}, {1})".format( color_dict[state], line_wp_index) )
-            '''
+            
             return line_wp_index, state
         else:
             # rospy.logwarn("No traffic light found.")
