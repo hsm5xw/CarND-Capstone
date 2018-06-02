@@ -49,7 +49,7 @@ class TLClassifier(object):
             image_np_expanded = np.expand_dims(image, axis=0)
 
             # Run inference
-            (boxes, scores, classes) = tf_session.run( 
+            (boxes, scores, classes) = self.tf_session.run( 
                          [self.detection_boxes, self.detection_scores, self.detection_classes] ,
                          feed_dict={ self.image_tensor: image_np_expanded})
         
