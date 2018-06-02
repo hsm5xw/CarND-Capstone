@@ -106,7 +106,7 @@ class Controller(object):
         # If target linear velocity = 0, then go very slow        
         if linear_vel == 0. and current_vel < 0.1:
             throttle = 0.
-            brake    = 400   # N*m - to hold the car in place if we are stopped at a light. Acceleration - 1m/s^2
+            brake    = 700   # N*m - to hold the car in place if we are stopped at a light. Acceleration - 1m/s^2
         
         # If throttle is really small and velocity error < 0 (i.e. we're going faster than we want to be)
         elif throttle < 0.1 and vel_error < 0.:
