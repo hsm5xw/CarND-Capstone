@@ -54,12 +54,6 @@ class DBWNode(object):
         self.cte           = None
         self.throttle  = self.steering = self.brake = 0.
 
-        # outgoing topics
-        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
-        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=1)
-        self.brake_pub    = rospy.Publisher('/vehicle/brake_cmd',    BrakeCmd,    queue_size=1)
-        
-
         # TODO: Create `Controller` object
         self.controller = Controller( vehicle_mass    = vehicle_mass,
                                       fuel_capacity   = fuel_capacity,
@@ -80,6 +74,11 @@ class DBWNode(object):
 
         rospy.Subscriber('/cteFromWayPointUpdater', Float64, self.cte_cb)
 
+        # outgoing topics
+        self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
+        self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=1)
+        self.brake_pub    = rospy.Publisher('/vehicle/brake_cmd',    BrakeCmd,    queue_size=1)
+        
         self.loop()
 
     def loop(self):

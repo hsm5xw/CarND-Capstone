@@ -38,9 +38,6 @@ class TLDetector(object):
         config_string = rospy.get_param("/traffic_light_config")
         self.config   = yaml.load(config_string)
 
-        # output
-        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
-
         self.bridge           = CvBridge()
         self.light_classifier = TLClassifier()
         self.listener         = tf.TransformListener()
@@ -68,6 +65,9 @@ class TLDetector(object):
         # TODO: replace '/image_color' with '/image_raw' (*)
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb) # ground-truth from simulator
         sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+
+        # output
+        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
         # ---------------------------------------------------------------------------------
 
         # Let the tl_detector spin, all the work is done by the _cb functions.
