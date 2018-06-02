@@ -14,7 +14,7 @@ class TLClassifier(object):
     def __init__(self):
         rospy.logwarn("backup_path: {}".format(backup_path) )
         
-        self.model_path      = rospy.get_param('model_path', 'crap')
+        self.model_path      = rospy.get_param('model_path', backup_path)
         self.detection_graph = tf.Graph()        
        
         with self.detection_graph.as_default():
