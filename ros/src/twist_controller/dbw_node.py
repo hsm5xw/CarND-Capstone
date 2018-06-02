@@ -46,6 +46,14 @@ class DBWNode(object):
         max_lat_accel   = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
 
+        self.current_vel   = None
+        self.dbw_enabled   = None
+        self.linear_vel    = None   # target linear velocity
+        self.angular_vel   = None   # target angular velocity
+        
+        self.cte           = None
+        self.throttle  = self.steering = self.brake = 0.
+
         # outgoing topics
         self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
         self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd', ThrottleCmd, queue_size=1)
@@ -71,14 +79,6 @@ class DBWNode(object):
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
 
         rospy.Subscriber('/cteFromWayPointUpdater', Float64, self.cte_cb)
-
-        self.current_vel   = None
-        self.dbw_enabled   = None
-        self.linear_vel    = None   # target linear velocity
-        self.angular_vel   = None   # target angular velocity
-        
-        self.cte           = None
-        self.throttle  = self.steering = self.brake = 0.
 
         self.loop()
 

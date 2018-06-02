@@ -33,22 +33,8 @@ class TLDetector(object):
         self.lights          = []
         self.has_image       = False
 
-        # input ---------------------------------------------------------------------------
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
-        '''
-        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
-        helps you acquire an accurate ground truth data source for the traffic light
-        classifier by sending the current color state of all traffic lights in the
-        simulator. When testing on the vehicle, the color state will not be available. You'll need to
-        rely on the position of the light and the camera image to predict it.
-        '''
-        # TODO: replace '/image_color' with '/image_raw' (*)
-        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb) # ground-truth from simulator
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
-        # ---------------------------------------------------------------------------------
-
+        # put all variables above publisher/subscribers.. 
+        # -----------------------------------------------------------------------------------
         config_string = rospy.get_param("/traffic_light_config")
         self.config   = yaml.load(config_string)
 
@@ -67,6 +53,22 @@ class TLDetector(object):
         # keep count of the image so far, so only process the nth image
         # This is to help the lag problem
         self.image_count = 0
+
+        # input ---------------------------------------------------------------------------
+        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+
+        '''
+        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
+        helps you acquire an accurate ground truth data source for the traffic light
+        classifier by sending the current color state of all traffic lights in the
+        simulator. When testing on the vehicle, the color state will not be available. You'll need to
+        rely on the position of the light and the camera image to predict it.
+        '''
+        # TODO: replace '/image_color' with '/image_raw' (*)
+        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb) # ground-truth from simulator
+        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+        # ---------------------------------------------------------------------------------
 
         # Let the tl_detector spin, all the work is done by the _cb functions.
         # as the image_cb is called and received a new image, it will determine the color of the stop light

@@ -35,15 +35,6 @@ class WaypointUpdater(object):
         # global debug counter
         self.debug_counter = 0
 
-        rospy.Subscriber('/current_pose',   PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
-        self.cte_pub             = rospy.Publisher('cteFromWayPointUpdater', Float64, queue_size=1) # extra (*)
-
         # TODO: Add other member variables you need below
         self.pose           = None
         self.base_waypoints = None
@@ -51,6 +42,15 @@ class WaypointUpdater(object):
         self.waypoint_tree  = None
         self.cte            = None
         self.traffic_waypoint = -1
+
+        rospy.Subscriber('/current_pose',   PoseStamped, self.pose_cb)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
+
+
+        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.cte_pub             = rospy.Publisher('cteFromWayPointUpdater', Float64, queue_size=1) # extra (*)
         
         # the loop waiting for messsages
         self.loop()
