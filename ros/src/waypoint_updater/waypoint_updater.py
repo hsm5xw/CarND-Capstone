@@ -56,7 +56,7 @@ class WaypointUpdater(object):
         self.loop()
     
     def loop(self):
-        rate = rospy.Rate(4)  # (PUBLISHER_RATE) Hz
+        rate = rospy.Rate(10)  # (PUBLISHER_RATE) Hz
 
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree: 
@@ -152,7 +152,8 @@ class WaypointUpdater(object):
             lane.waypoints = new_waypoints
         else:
             # there IS a stoplight, prepare to slow down and stop
-            lane.waypoints = self.decelerate_waypoints(new_waypoints, closest_idx)
+            # Add a minus 2 to the waypoints, so the car will stop at the front of the car, not cross the line
+            lane.waypoints = self.decelerate_waypoints(new_waypoints, closest_idx-2)
             
         return lane           
     
