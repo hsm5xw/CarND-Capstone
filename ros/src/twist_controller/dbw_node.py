@@ -69,10 +69,10 @@ class DBWNode(object):
 
         # TODO: Subscribe to all the topics you need to (incoming topics)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
-        rospy.Subscriber('/twist_cmd', TwistStamped,   self.twist_cb)
-        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
+        rospy.Subscriber('/twist_cmd', TwistStamped,   self.twist_cb, queue_size=1)
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb, queue_size=1)
 
-        rospy.Subscriber('/cteFromWayPointUpdater', Float64, self.cte_cb)
+        rospy.Subscriber('/cteFromWayPointUpdater', Float64, self.cte_cb, queue_size=1)
 
         # outgoing topics
         self.steer_pub    = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
