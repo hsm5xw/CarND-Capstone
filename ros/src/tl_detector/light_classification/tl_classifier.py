@@ -5,7 +5,7 @@ import rospy
 import os
 
 # NUM_CLASSES      = 4
-# MIN_SCORE_THRESH = 0.5
+# MIN_SCORE_THRESH = 0.3
 
 backup_parts = [os.getcwd(), '..', '..', '..', 'classifier', 'ssd_inception_v2_coco_sim', 'frozen_inference_graph.pb'] 
 backup_path  = os.path.join( *backup_parts)
@@ -58,7 +58,7 @@ class TLClassifier(object):
             classes = np.squeeze(classes).astype(np.int32)
 
             if scores is not None and classes is not None:
-                if scores[0] > 0.5: # MIN_SCORE_THRESH
+                if scores[0] > 0.3: # MIN_SCORE_THRESH
                     if classes[0] == 1:
                         return TrafficLight.GREEN
                     elif classes[0] == 2:

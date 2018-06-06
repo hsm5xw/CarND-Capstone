@@ -24,7 +24,7 @@ as well as to verify your TL classifier.
 
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
-#LOOKAHEAD_WPS  = 100 # Number of waypoints we will publish. You can change this number
+#LOOKAHEAD_WPS  = 50 # Number of waypoints we will publish. You can change this number
 #PUBLISHER_RATE = 4
 MAX_DECEL = .5
 
@@ -43,7 +43,7 @@ class WaypointUpdater(object):
         self.cte            = None
         self.traffic_waypoint = -1
 
-        rospy.Subscriber('/current_pose',   PoseStamped, self.pose_cb)
+        rospy.Subscriber('/current_pose',   PoseStamped, self.pose_cb, queue_size=1)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
 
@@ -110,6 +110,7 @@ class WaypointUpdater(object):
         if val > 0:
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
         
+        '''
         # For computing CTE
         x0 = x
         y0 = y
@@ -123,7 +124,9 @@ class WaypointUpdater(object):
         # Find the sign of CTE
         sign = self.find_cte_sign( closest_idx)
         cte  = cte * sign
-
+        '''
+        cte  = 0.
+        
         #if self.debug_counter % 4 == 0:  # modulo by publisher rate
         #    rospy.logwarn("cte: {a:f}, closest_idx: {b:f}".format( a=cte, b=closest_idx) )
   
@@ -136,7 +139,7 @@ class WaypointUpdater(object):
         self.cte_pub.publish( cte )  # extra (*)
         
     def generate_lane(self, closest_idx):
-        LOOKAHEAD_WPS  = 100 # Number of waypoints we will publish. You can change this number
+        LOOKAHEAD_WPS  = 50 # Number of waypoints we will publish. You can change this number
         
         # new lane that hold all the waypoints to publish        
         lane = Lane()
