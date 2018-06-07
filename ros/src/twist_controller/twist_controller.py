@@ -91,16 +91,6 @@ class Controller(object):
         # save the current steering angle into last_steering_angle for next 
         self.last_steering_angle = steering
         
-        # apply brakes if steering angle is big, and speed is at 10 mph or higher
-        '''
-        if ( current_vel > 9*ONE_MPH ):
-            if (abs(steering) > 0.30):
-                brake = 5
-            elif (abs(steering) > 0.15):
-                brake = 2
-            elif (abs(steering) > 0.10):
-                brake = 1
-        '''
         # If target linear velocity = 0, then go very slow        
         if linear_vel == 0. and current_vel < 0.1:
             throttle = 0.

@@ -87,8 +87,10 @@ class TLDetector(object):
                 
                 # color transition  ex) green -> yellow
                 if self.state != state:
-                    self.state_count = 0
-                    self.state       = state            # save new state
+                    # prevent invalid state trasition
+                    if not ( (self.state == TrafficLight.RED) and (state == TrafficLight.YELLOW) ):
+                        self.state_count = 0
+                        self.state       = state            # save new state
                     
                 elif self.state_count >= STATE_COUNT_THRESHOLD:
      

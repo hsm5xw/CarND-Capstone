@@ -24,7 +24,7 @@ as well as to verify your TL classifier.
 
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
-#LOOKAHEAD_WPS  = 50 # Number of waypoints we will publish. You can change this number
+#LOOKAHEAD_WPS  = 80 # Number of waypoints we will publish. You can change this number
 #PUBLISHER_RATE = 4
 MAX_DECEL = .5
 
@@ -139,7 +139,7 @@ class WaypointUpdater(object):
         self.cte_pub.publish( cte )  # extra (*)
         
     def generate_lane(self, closest_idx):
-        LOOKAHEAD_WPS  = 50 # Number of waypoints we will publish. You can change this number
+        LOOKAHEAD_WPS  = 80 # Number of waypoints we will publish. You can change this number
         
         # new lane that hold all the waypoints to publish        
         lane = Lane()
