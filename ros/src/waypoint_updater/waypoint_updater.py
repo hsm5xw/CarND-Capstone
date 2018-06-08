@@ -111,6 +111,7 @@ class WaypointUpdater(object):
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
         
         '''
+        # Note: (only used for debugging purpose)
         # For computing CTE
         x0 = x
         y0 = y
@@ -119,13 +120,17 @@ class WaypointUpdater(object):
         x2 = self.waypoints_2d[closest_idx][0]
         y2 = self.waypoints_2d[closest_idx][1]
 
-        cte = math.fabs((y2 - y1)*x0  -  (x2 - x1)*y0  + x2*y1  - y2*x1) / math.sqrt( math.pow(y2 - y1, 2.0) +  math.pow(x2 - x1, 2.0))
-                   
+        denom = math.sqrt( math.pow(y2 - y1, 2.0) +  math.pow(x2 - x1, 2.0) )
+        if denom < 0.001:
+            cte   = 0.
+        else: 
+            cte   = math.fabs((y2 - y1)*x0  -  (x2 - x1)*y0  + x2*y1  - y2*x1) / denom
+   
         # Find the sign of CTE
         sign = self.find_cte_sign( closest_idx)
         cte  = cte * sign
         '''
-        cte  = 0.
+        cte = 0.
         
         #if self.debug_counter % 4 == 0:  # modulo by publisher rate
         #    rospy.logwarn("cte: {a:f}, closest_idx: {b:f}".format( a=cte, b=closest_idx) )
